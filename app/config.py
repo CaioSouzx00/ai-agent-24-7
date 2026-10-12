@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     llm_provider: str = "nim"
     nim_base_url: str = "http://localhost:8000/v1"
     nim_model: str = "meta/llama-3.1-8b-instruct"
+    nim_embed_model: str = "nvidia/nv-embedqa-e5-v5"
     nim_api_key: str = "not-needed-locally"
     redis_url: str = "redis://localhost:6379/0"
     database_url: str = "postgresql://agent:agent@localhost:5432/agent"

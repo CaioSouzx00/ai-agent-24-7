@@ -18,8 +18,10 @@ class NIMProvider(LLMProvider):
         api_key: str = "",
         timeout: float = 120.0,
         transport: httpx.AsyncBaseTransport | None = None,
+        embed_model: str = "nvidia/nv-embedqa-e5-v5",
     ):
         self.model = model
+        self.embed_model = embed_model
         self._client = httpx.AsyncClient(
             base_url=base_url,
             timeout=timeout,
@@ -48,6 +50,15 @@ class NIMProvider(LLMProvider):
             for tc in msg.get("tool_calls") or []
         ]
         return LLMResponse(content=msg.get("content") or "", tool_calls=calls)
+
+    async def embed(self, texts: list[str]) -> list[list[float]]:
+        resp = await self._client.post(
+            "/embeddings",
+            json={"model": self.embed_model, "input": texts, "input_type": "query"},
+        )
+        resp.raise_for_status()
+        data = sorted(resp.json()["data"], key=lambda d: d.get("index", 0))
+        return [d["embedding"] for d in data]
 
     async def aclose(self) -> None:
         await self._client.aclose()

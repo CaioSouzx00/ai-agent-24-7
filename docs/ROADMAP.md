@@ -12,8 +12,8 @@ Legend: ✅ done · 🟡 skeleton (TODO) · ⬜ pending
 | 1 | 1.5 Local LLM docs | ✅ |
 | 2 | 2.1 FastAPI + health | ✅ |
 | 2 | 2.2 LangGraph | ✅ |
-| 2 | 2.3 Redis sessions (`SessionStore`) | 🟡 not wired in |
-| 2 | 2.4 pgvector (`LongTermMemory`) | 🟡 |
+| 2 | 2.3 Redis sessions (`SessionStore`, in-memory fallback) | ✅ wired into graph |
+| 2 | 2.4 pgvector (`LongTermMemory`) | ✅ unit-tested; not run against a live Postgres yet |
 | 2 | 2.5 Core tests | ✅ |
 | 3 | 3.1 BaseTool / 3.8 Registry | ✅ |
 | 3 | 3.2–3.7 Web, Gmail, Calendar, Slack, GitHub, Vision | 🟡 stubs |
