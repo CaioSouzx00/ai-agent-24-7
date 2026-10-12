@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Awaitable, Callable
+from dataclasses import dataclass
 
 import httpx
 
@@ -42,3 +44,14 @@ async def send_whatsapp(
             },
         )
     resp.raise_for_status()
+
+
+@dataclass
+class Senders:
+    slack: Callable[[str, str], Awaitable[None]] = send_slack
+    whatsapp: Callable[[str, str, str], Awaitable[None]] = send_whatsapp
+
+
+def get_senders(state) -> Senders:
+    """Senders from app.state (overridable in tests) or the real ones."""
+    return getattr(state, "senders", None) or Senders()

@@ -7,7 +7,6 @@ import json
 import logging
 from collections.abc import Awaitable, Callable
 from contextlib import asynccontextmanager
-from dataclasses import dataclass
 
 from fastapi import (
     BackgroundTasks,
@@ -24,8 +23,10 @@ from prometheus_client import CONTENT_TYPE_LATEST, Counter, generate_latest
 from pydantic import BaseModel
 
 from app.agent.graph import build_graph
-from app.channels import send_slack, send_whatsapp
+from app.channels import get_senders
 from app.config import get_settings
+from app.handoff_api import api as handoff_api
+from app.handoff_api import public as handoff_public
 from app.health import readiness
 from app.llm import get_llm
 from app.memory import InMemorySessionStore, LongTermMemory, SessionStore
@@ -35,6 +36,7 @@ from app.security import (
     verify_slack_signature,
     websocket_authorized,
 )
+from app.tickets import InMemoryTicketStore, RedisTicketStore, notify_humans
 from app.tools import integrations  # noqa: F401  (registers tools)
 from app.tools.base import registry
 
@@ -68,43 +70,66 @@ async def lifespan(app: FastAPI):
     except Exception as exc:  # noqa: BLE001
         log.warning("Postgres/pgvector unavailable; long-term memory disabled (%s)", exc)
 
+    tickets = (
+        RedisTicketStore(session_store._r)
+        if isinstance(session_store, SessionStore)
+        else InMemoryTicketStore()
+    )
+
+    async def notifier(ticket):
+        await notify_humans(ticket, s.slack_handoff_webhook, s.public_url)
+
     app.state.llm = llm
     app.state.sessions = session_store
     app.state.memory = memory
-    app.state.graph = build_graph(llm, registry, session_store, memory)
+    app.state.tickets = tickets
+    app.state.graph = build_graph(llm, registry, session_store, memory, tickets, notifier)
     yield
 
 
 app = FastAPI(title="AI Agent 24/7", version="0.1.0", lifespan=lifespan)
+app.include_router(handoff_public)
+app.include_router(handoff_api)
 
 
-async def _run(session_id: str, message: str, channel: str) -> dict:
+async def _run(session_id: str, message: str, channel: str, meta: dict | None = None) -> dict:
     REQUESTS.labels(channel).inc()
-    out = await app.state.graph.ainvoke({"session_id": session_id, "user_input": message})
-    return {"response": out.get("response", ""), "handoff": out.get("handoff", False)}
+    out = await app.state.graph.ainvoke(
+        {
+            "session_id": session_id,
+            "user_input": message,
+            "channel": channel,
+            "meta": meta or {},
+        }
+    )
+    return {
+        "response": out.get("response", ""),
+        "handoff": out.get("handoff", False),
+        "paused": out.get("paused", False),
+    }
 
 
-@dataclass
-class Senders:
-    slack: Callable[[str, str], Awaitable[None]] = send_slack
-    whatsapp: Callable[[str, str, str], Awaitable[None]] = send_whatsapp
-
-
-def _senders() -> Senders:
-    return getattr(app.state, "senders", None) or Senders()
+def _senders():
+    return get_senders(app.state)
 
 
 async def _reply(
-    channel: str, session_id: str, text: str, send: Callable[[str], Awaitable[None]]
+    channel: str,
+    session_id: str,
+    text: str,
+    send: Callable[[str], Awaitable[None]],
+    meta: dict | None = None,
 ) -> None:
     """Run the agent and deliver the answer to the originating channel (background task)."""
     try:
-        answer = (await _run(session_id, text, channel))["response"]
+        result = await _run(session_id, text, channel, meta)
     except Exception:  # noqa: BLE001
         log.exception("agent failed for %s session %s", channel, session_id)
-        answer = "Sorry, something went wrong while processing your message."
+        result = {"response": "Sorry, something went wrong while processing your message."}
+    if result.get("paused"):
+        return  # a human owns this conversation; the bot stays silent
     try:
-        await send(answer or "(no response)")
+        await send(result["response"] or "(no response)")
     except Exception:  # noqa: BLE001
         log.exception("failed to deliver %s reply for session %s", channel, session_id)
 
@@ -206,6 +231,11 @@ async def whatsapp_webhook(request: Request, background: BackgroundTasks):
         return {"ok": True}  # statuses, media, etc.
     sender = msg["from"]
     background.add_task(
-        _reply, "whatsapp", sender, text, lambda t: _senders().whatsapp(sender, t, phone_id)
+        _reply,
+        "whatsapp",
+        sender,
+        text,
+        lambda t: _senders().whatsapp(sender, t, phone_id),
+        {"phone_number_id": phone_id},
     )
     return {"ok": True}
