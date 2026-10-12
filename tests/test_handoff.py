@@ -11,13 +11,7 @@ from app.config import get_settings
 from app.llm.base import LLMProvider, LLMResponse
 from app.main import app
 from app.memory import InMemorySessionStore
-from app.tickets import (
-    InMemoryTicketStore,
-    RedisTicketStore,
-    Ticket,
-    format_alert,
-    notify_humans,
-)
+from app.tickets import InMemoryTicketStore, RedisTicketStore, Ticket, format_alert, notify_humans
 from app.tools.base import ToolRegistry
 
 
