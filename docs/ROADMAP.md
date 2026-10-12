@@ -16,7 +16,8 @@ Legend: ✅ done · 🟡 skeleton (TODO) · ⬜ pending
 | 2 | 2.4 pgvector (`LongTermMemory`) | ✅ unit-tested; not run against a live Postgres yet |
 | 2 | 2.5 Core tests | ✅ |
 | 3 | 3.1 BaseTool / 3.8 Registry | ✅ |
-| 3 | 3.2–3.7 Web, Gmail, Calendar, Slack, GitHub, Vision | 🟡 stubs |
+| 3 | 3.2 Web (fetch+search), 3.5 Slack | ✅ (no headless browser) |
+| 3 | 3.3 Gmail, 3.4 Calendar, 3.6 GitHub, 3.7 Vision | 🟡 stubs (not exposed to LLM) |
 | 4 | 4.1 REST+WS, 4.2 Slack, 4.3 WhatsApp | ✅ basic (no signature check) |
 | 4 | 4.4 Pub/Sub, 4.5 Auth | ⬜ |
 | 5 | 5.1 Temporal | 🟡 `app/workflows.py` |
