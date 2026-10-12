@@ -15,7 +15,9 @@ def get_dashboard_html() -> HTMLResponse:
   <title>AI Agent 24/7 - Operations & Metrics Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
+    rel="stylesheet">
   <style>
     :root {
       --bg: #090d16;
@@ -331,7 +333,10 @@ def get_dashboard_html() -> HTMLResponse:
     <div class="card">
       <div class="panel-header">
         <h2>Prometheus Metrics Snapshot</h2>
-        <button class="btn" style="padding: 4px 10px; font-size: 0.75rem;" onclick="fetchMetrics()">Refresh</button>
+        <button
+          class="btn"
+          style="padding: 4px 10px; font-size: 0.75rem;"
+          onclick="fetchMetrics()">Refresh</button>
       </div>
       <div class="metric-log" id="metric-snapshot">Fetching latest Prometheus metrics...</div>
     </div>
@@ -399,7 +404,9 @@ def get_dashboard_html() -> HTMLResponse:
                 <div class="tool-name">${name}</div>
                 <div class="tool-desc">${desc.slice(0, 100)}</div>
               </div>
-              <span class="pill ${isDynamic ? 'pill-dynamic' : 'pill-core'}">${isDynamic ? 'Dynamic' : 'Core'}</span>
+              <span class="pill ${isDynamic ? 'pill-dynamic' : 'pill-core'}">
+                ${isDynamic ? 'Dynamic' : 'Core'}
+              </span>
             `;
             container.appendChild(item);
           }

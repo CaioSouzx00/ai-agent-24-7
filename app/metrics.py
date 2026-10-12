@@ -25,9 +25,7 @@ else:
 if "agent_tool_calls_total" in REGISTRY._names_to_collectors:
     TOOL_CALLS = REGISTRY._names_to_collectors["agent_tool_calls_total"]
 else:
-    TOOL_CALLS = Counter(
-        "agent_tool_calls_total", "Total tool executions", ["tool_name", "status"]
-    )
+    TOOL_CALLS = Counter("agent_tool_calls_total", "Total tool executions", ["tool_name", "status"])
 
 # Rate limit exceeded counter
 if "agent_ratelimit_exceeded_total" in REGISTRY._names_to_collectors:

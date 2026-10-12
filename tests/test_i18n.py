@@ -50,11 +50,21 @@ def test_detect_language_empty_and_default():
 
 
 def test_localized_messages():
-    assert get_localized_message("handoff", "pt") == "Encaminhei sua solicitação para um atendente humano."
-    assert get_localized_message("handoff", "en") == "I have forwarded your request to a human agent."
-    assert get_localized_message("handoff", "es") == "He transferido su solicitud a un agente humano."
+    assert (
+        get_localized_message("handoff", "pt")
+        == "Encaminhei sua solicitação para um atendente humano."
+    )
+    assert (
+        get_localized_message("handoff", "en") == "I have forwarded your request to a human agent."
+    )
+    assert (
+        get_localized_message("handoff", "es") == "He transferido su solicitud a un agente humano."
+    )
     # Unknown language falls back to English
-    assert get_localized_message("handoff", "unknown") == "I have forwarded your request to a human agent."
+    assert (
+        get_localized_message("handoff", "unknown")
+        == "I have forwarded your request to a human agent."
+    )
 
 
 @pytest.mark.asyncio

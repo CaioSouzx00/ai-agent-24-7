@@ -5,7 +5,7 @@ from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
 
 from app.config import get_settings
-from app.ratelimit import RateLimiter, check_rate_limit, limiter
+from app.ratelimit import RateLimiter, check_rate_limit
 
 
 @pytest.mark.asyncio

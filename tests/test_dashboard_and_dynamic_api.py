@@ -1,11 +1,9 @@
 """Unit tests for Dashboard endpoint and Dynamic Tools REST API (Tasks 11 & 12)."""
 
-import httpx
 from fastapi.testclient import TestClient
 
 from app.main import app
 from app.tools.base import registry
-from app.tools.dynamic import unregister_dynamic_tool
 
 client = TestClient(app)
 

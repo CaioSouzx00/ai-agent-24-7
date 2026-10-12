@@ -92,11 +92,11 @@ class CreateToolTool(BaseTool):
         "properties": {
             "name": {
                 "type": "string",
-                "description": "Identifier for the new tool (letters, numbers, underscores, e.g. 'crypto_price')",
+                "description": "Identifier for the new tool (e.g. 'crypto_price')",
             },
             "description": {
                 "type": "string",
-                "description": "Clear explanation of what the tool does and when it should be invoked",
+                "description": "Clear explanation of what the tool does and when to call it",
             },
             "url": {
                 "type": "string",
@@ -137,7 +137,7 @@ class CreateToolTool(BaseTool):
 
         # Validation checks
         if not re.match(r"^[a-zA-Z0-9_-]{3,64}$", name):
-            return "error: tool name must be 3-64 characters and contain only letters, numbers, hyphens, or underscores"
+            return "error: tool name must be 3-64 characters (alphanumeric, hyphens, underscores)"
 
         if name in PROTECTED_TOOL_NAMES:
             return f"error: cannot overwrite protected core tool '{name}'"
@@ -171,9 +171,7 @@ class CreateToolTool(BaseTool):
         _DYNAMIC_REGISTRY[name] = tool
         DYNAMIC_TOOLS.set(len(_DYNAMIC_REGISTRY))
 
-        return (
-            f"Tool '{name}' created and registered successfully! It is now active and ready for use."
-        )
+        return f"Tool '{name}' created and registered successfully! Ready for use."
 
 
 def list_dynamic_tools() -> list[dict[str, Any]]:

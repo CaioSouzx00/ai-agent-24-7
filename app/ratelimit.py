@@ -82,7 +82,11 @@ def resolve_identifier(request: Request, session_id: str | None = None) -> tuple
 
     # 3. Client IP address
     forwarded = request.headers.get("x-forwarded-for")
-    ip = forwarded.split(",")[0].strip() if forwarded else (request.client.host if request.client else "unknown")
+    ip = (
+        forwarded.split(",")[0].strip()
+        if forwarded
+        else (request.client.host if request.client else "unknown")
+    )
     return "ip", f"ip:{ip}"
 
 
