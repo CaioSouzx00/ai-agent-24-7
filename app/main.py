@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Query, Request, WebSocket
@@ -12,8 +13,11 @@ from pydantic import BaseModel
 from app.agent.graph import build_graph
 from app.config import get_settings
 from app.llm import get_llm
+from app.memory import InMemorySessionStore, LongTermMemory, SessionStore
 from app.tools import integrations  # noqa: F401  (registers tools)
 from app.tools.base import registry
+
+log = logging.getLogger(__name__)
 
 REQUESTS = Counter("agent_requests_total", "Total messages processed", ["channel"])
 
@@ -30,7 +34,22 @@ async def lifespan(app: FastAPI):
         import sentry_sdk
 
         sentry_sdk.init(dsn=s.sentry_dsn)
-    app.state.graph = build_graph(get_llm(), registry)
+    llm = get_llm()
+
+    session_store = SessionStore(s.redis_url)
+    if not await session_store.ping():
+        log.warning("Redis unreachable; using in-memory sessions (not persistent)")
+        session_store = InMemorySessionStore()
+
+    memory = None
+    try:
+        memory = await LongTermMemory.connect(s.database_url, llm)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Postgres/pgvector unavailable; long-term memory disabled (%s)", exc)
+
+    app.state.sessions = session_store
+    app.state.memory = memory
+    app.state.graph = build_graph(llm, registry, session_store, memory)
     yield
 
 

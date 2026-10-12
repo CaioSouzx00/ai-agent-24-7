@@ -29,3 +29,7 @@ class LLMProvider(ABC):
         temperature: float = 0.2,
     ) -> LLMResponse:
         """Send messages (OpenAI format) and return the response + tool calls."""
+
+    async def embed(self, texts: list[str]) -> list[list[float]]:
+        """Return one embedding vector per input text."""
+        raise NotImplementedError(f"{type(self).__name__} does not support embeddings")

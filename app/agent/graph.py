@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any, TypedDict
 
 from langgraph.graph import END, StateGraph
 
 from app.agent.handoff import needs_handoff
 from app.llm.base import LLMProvider, ToolCall
+from app.memory import LongTermMemory, SessionBackend
 from app.tools.base import ToolRegistry
 
 
@@ -23,21 +25,36 @@ class AgentState(TypedDict, total=False):
     handoff: bool
 
 
-def build_graph(llm: LLMProvider, tools: ToolRegistry, memory_retriever=None):
+log = logging.getLogger(__name__)
+
+
+def build_graph(
+    llm: LLMProvider,
+    tools: ToolRegistry,
+    session_store: SessionBackend | None = None,
+    memory: LongTermMemory | None = None,
+):
     async def classify_intent(state: AgentState) -> AgentState:
         handoff = needs_handoff(state["user_input"])
         return {"intent": "sensitive" if handoff else "general", "handoff": handoff}
 
     async def retrieve_memory(state: AgentState) -> AgentState:
-        mems = await memory_retriever(state["user_input"]) if memory_retriever else []
-        return {"memories": mems}
+        if not memory:
+            return {"memories": []}
+        try:
+            return {"memories": await memory.search(state["session_id"], state["user_input"])}
+        except Exception:  # noqa: BLE001 - memory is best-effort
+            log.warning("long-term memory search failed", exc_info=True)
+            return {"memories": []}
 
     async def plan(state: AgentState) -> AgentState:
         system = "You are a helpful assistant."
         if state.get("memories"):
-            system += "\nContext:\n" + "\n".join(state["memories"])
+            system += "\nRelevant past context:\n" + "\n".join(state["memories"])
+        history = await session_store.get(state["session_id"]) if session_store else []
         msgs = [
             {"role": "system", "content": system},
+            *history,
             {"role": "user", "content": state["user_input"]},
         ]
         r = await llm.chat(msgs, tools=tools.schemas() or None)
@@ -63,6 +80,21 @@ def build_graph(llm: LLMProvider, tools: ToolRegistry, memory_retriever=None):
     async def handoff(state: AgentState) -> AgentState:
         return {"response": "I have forwarded your request to a human agent."}
 
+    async def save_turn(state: AgentState) -> AgentState:
+        sid, text = state["session_id"], state["user_input"]
+        if session_store:
+            await session_store.append(
+                sid,
+                {"role": "user", "content": text},
+                {"role": "assistant", "content": state.get("response", "")},
+            )
+        if memory and not state.get("handoff"):
+            try:
+                await memory.add(sid, text)
+            except Exception:  # noqa: BLE001 - memory is best-effort
+                log.warning("long-term memory write failed", exc_info=True)
+        return {}
+
     g = StateGraph(AgentState)
     g.add_node("classify_intent", classify_intent)
     g.add_node("retrieve_memory", retrieve_memory)
@@ -70,13 +102,17 @@ def build_graph(llm: LLMProvider, tools: ToolRegistry, memory_retriever=None):
     g.add_node("execute_tools", execute_tools)
     g.add_node("respond", respond)
     g.add_node("handoff", handoff)
+    g.add_node("save_turn", save_turn)
     g.set_entry_point("classify_intent")
     g.add_conditional_edges(
         "classify_intent", lambda s: "handoff" if s["handoff"] else "retrieve_memory"
     )
     g.add_edge("retrieve_memory", "plan")
-    g.add_conditional_edges("plan", lambda s: "execute_tools" if s.get("tool_calls") else END)
+    g.add_conditional_edges(
+        "plan", lambda s: "execute_tools" if s.get("tool_calls") else "save_turn"
+    )
     g.add_edge("execute_tools", "respond")
-    g.add_edge("respond", END)
-    g.add_edge("handoff", END)
+    g.add_edge("respond", "save_turn")
+    g.add_edge("handoff", "save_turn")
+    g.add_edge("save_turn", END)
     return g.compile()
