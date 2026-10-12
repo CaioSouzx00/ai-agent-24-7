@@ -11,11 +11,19 @@ from app.llm.base import LLMProvider, LLMResponse, ToolCall
 
 
 class NIMProvider(LLMProvider):
-    def __init__(self, base_url: str, model: str, api_key: str = "", timeout: float = 120.0):
+    def __init__(
+        self,
+        base_url: str,
+        model: str,
+        api_key: str = "",
+        timeout: float = 120.0,
+        transport: httpx.AsyncBaseTransport | None = None,
+    ):
         self.model = model
         self._client = httpx.AsyncClient(
             base_url=base_url,
             timeout=timeout,
+            transport=transport,
             headers={"Authorization": f"Bearer {api_key}"} if api_key else {},
         )
 
