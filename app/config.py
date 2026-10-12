@@ -35,6 +35,9 @@ class Settings(BaseSettings):
     google_service_account_file: str = ""  # Path to service account JSON
     google_oauth_credentials_file: str = ""  # Path to OAuth client token JSON
     vision_model: str = ""  # Specific multimodal vision model (defaults to nim_model)
+    stt_model: str = "whisper-1"  # Whisper or NVIDIA STT model
+    tts_model: str = "tts-1"  # Text-to-speech model
+    tts_voice: str = "alloy"  # Default voice for audio output
 
 
 @lru_cache

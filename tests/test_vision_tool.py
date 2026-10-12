@@ -3,7 +3,6 @@
 import json
 
 import httpx
-import pytest
 
 from app.tools.vision import ImageAnalysisTool
 
@@ -18,12 +17,19 @@ async def test_vision_tool_success():
     def mock_handler(request: httpx.Request):
         body = json.loads(request.content)
         assert body["model"] == "meta/llama-3.2-11b-vision-instruct"
-        assert body["messages"][0]["content"][1]["image_url"]["url"] == "https://example.com/cat.jpg"
+        assert (
+            body["messages"][0]["content"][1]["image_url"]["url"] == "https://example.com/cat.jpg"
+        )
         return httpx.Response(
             200,
             json={
                 "choices": [
-                    {"message": {"role": "assistant", "content": "A cute orange cat sleeping on a rug."}}
+                    {
+                        "message": {
+                            "role": "assistant",
+                            "content": "A cute orange cat sleeping on a rug.",
+                        }
+                    }
                 ]
             },
         )

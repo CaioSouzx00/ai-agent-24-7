@@ -1,0 +1,103 @@
+# Production Docker Compose stack with secrets, resource limits, and health checks
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "512mb", "--maxmemory-policy", "allkeys-lru"]
+    volumes:
+      - redis-prod-data:/data
+    networks:
+      - agent-internal
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER_FILE: /run/secrets/db_user
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+      POSTGRES_DB: agent_prod
+    secrets:
+      - db_user
+      - db_password
+    volumes:
+      - pg-prod-data:/var/lib/postgresql/data
+    networks:
+      - agent-internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agent"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2G
+
+  app:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      APP_ENV: prod
+      REDIS_URL: redis://redis:6379/0
+      DATABASE_URL_FILE: /run/secrets/db_url
+      NIM_API_KEY_FILE: /run/secrets/nim_api_key
+      PUBLIC_URL: https://agent.example.com
+    secrets:
+      - db_url
+      - nim_api_key
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - agent-internal
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://localhost:8080/live')"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  agent-internal:
+    driver: bridge
+
+volumes:
+  redis-prod-data:
+  pg-prod-data:
+
+secrets:
+  db_user:
+    file: ../secrets/db_user.txt
+  db_password:
+    file: ../secrets/db_password.txt
+  db_url:
+    file: ../secrets/db_url.txt
+  nim_api_key:
+    file: ../secrets/nim_api_key.txt

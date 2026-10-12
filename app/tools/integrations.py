@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from app.tools.base import registry
+from app.tools.browser import PlaywrightBrowserTool
 from app.tools.github import GitHubTool
 from app.tools.google import CalendarTool, GmailTool
 from app.tools.slack import SlackTool
@@ -13,6 +14,7 @@ from app.tools.web import WebBrowseTool, WebSearchTool
 for _t in (
     WebBrowseTool(),
     WebSearchTool(),
+    PlaywrightBrowserTool(),
     SlackTool(),
     GitHubTool(),
     GmailTool(),

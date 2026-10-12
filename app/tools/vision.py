@@ -24,7 +24,7 @@ class ImageAnalysisTool(BaseTool):
         "properties": {
             "image_url": {
                 "type": "string",
-                "description": "Public URL or base64 data URI (data:image/...) of the image to analyze",
+                "description": "Public URL or base64 data URI of the image to analyze",
             },
             "prompt": {
                 "type": "string",
@@ -78,7 +78,9 @@ class ImageAnalysisTool(BaseTool):
 
         try:
             async with httpx.AsyncClient(timeout=60.0, transport=self._transport) as client:
-                resp = await client.post(f"{base_url}/chat/completions", headers=headers, json=payload)
+                resp = await client.post(
+                    f"{base_url}/chat/completions", headers=headers, json=payload
+                )
             if not resp.is_success:
                 return f"error: vision API returned status {resp.status_code}: {resp.text[:300]}"
             data = resp.json()

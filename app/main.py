@@ -12,14 +12,17 @@ from fastapi import (
     BackgroundTasks,
     Depends,
     FastAPI,
+    File,
+    Form,
     HTTPException,
     Query,
     Request,
+    UploadFile,
     WebSocket,
     WebSocketDisconnect,
 )
 from fastapi.responses import JSONResponse, PlainTextResponse
-from prometheus_client import CONTENT_TYPE_LATEST, Counter, generate_latest
+from prometheus_client import CONTENT_TYPE_LATEST, REGISTRY, Counter, generate_latest
 from pydantic import BaseModel
 
 from app.agent.graph import build_graph
@@ -39,10 +42,14 @@ from app.security import (
 from app.tickets import InMemoryTicketStore, RedisTicketStore, notify_humans
 from app.tools import integrations  # noqa: F401  (registers tools)
 from app.tools.base import registry
+from app.voice import VoicePipeline
 
 log = logging.getLogger(__name__)
 
-REQUESTS = Counter("agent_requests_total", "Total messages processed", ["channel"])
+if "agent_requests_total" in REGISTRY._names_to_collectors:
+    REQUESTS = REGISTRY._names_to_collectors["agent_requests_total"]
+else:
+    REQUESTS = Counter("agent_requests_total", "Total messages processed", ["channel"])
 
 
 class ChatIn(BaseModel):
@@ -83,6 +90,7 @@ async def lifespan(app: FastAPI):
     app.state.sessions = session_store
     app.state.memory = memory
     app.state.tickets = tickets
+    app.state.voice = VoicePipeline()
     app.state.graph = build_graph(llm, registry, session_store, memory, tickets, notifier)
     yield
 
@@ -139,6 +147,11 @@ async def health():
     return {"status": "ok"}
 
 
+@app.get("/live")
+async def live():
+    return {"status": "alive"}
+
+
 @app.get("/ready")
 async def ready():
     code, body = await readiness(
@@ -160,6 +173,18 @@ async def tools_docs():
 @app.post("/chat", dependencies=[Depends(require_api_key)])
 async def chat(body: ChatIn):
     return await _run(body.session_id, body.message, "rest")
+
+
+@app.post("/voice/chat", dependencies=[Depends(require_api_key)])
+async def voice_chat(
+    file: UploadFile = File(...),  # noqa: B008
+    session_id: str = Form(...),  # noqa: B008
+):
+    audio_bytes = await file.read()
+    pipeline = getattr(app.state, "voice", None) or VoicePipeline()
+    return await pipeline.process(
+        audio_bytes, session_id, _run, filename=file.filename or "audio.mp3"
+    )
 
 
 @app.websocket("/ws/{session_id}")

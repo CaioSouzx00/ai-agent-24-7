@@ -92,16 +92,22 @@ class GitHubTool(BaseTool):
                         return f"No {state} issues found in {repo}."
                     lines = [f"Issues in {repo} ({state}):"]
                     for iss in issues[:10]:
-                        lines.append(
-                            f"- #{iss.get('number')}: {iss.get('title')} ({iss.get('state')}) - {iss.get('html_url')}"
+                        n, t, s, u = (
+                            iss.get("number"),
+                            iss.get("title"),
+                            iss.get("state"),
+                            iss.get("html_url"),
                         )
+                        lines.append(f"- #{n}: {t} ({s}) - {u}")
                     return "\n".join(lines)
 
                 elif action == "get_issue":
                     num = kwargs.get("issue_number")
                     if not num:
                         return "error: issue_number is required for get_issue"
-                    resp = await client.get(f"{GITHUB_API}/repos/{repo}/issues/{num}", headers=headers)
+                    resp = await client.get(
+                        f"{GITHUB_API}/repos/{repo}/issues/{num}", headers=headers
+                    )
                     if not resp.is_success:
                         return f"error: GitHub API returned {resp.status_code}: {resp.text[:200]}"
                     iss = resp.json()
@@ -124,15 +130,18 @@ class GitHubTool(BaseTool):
                     )
                     if not resp.is_success:
                         return f"error: GitHub API returned {resp.status_code}: {resp.text[:200]}"
-                    created = resp.json()
-                    return f"Issue created: #{created.get('number')} - {created.get('title')} ({created.get('html_url')})"
+                    c = resp.json()
+                    num, ititle, url = c.get("number"), c.get("title"), c.get("html_url")
+                    return f"Issue created: #{num} - {ititle} ({url})"
 
                 elif action == "get_repo":
                     resp = await client.get(f"{GITHUB_API}/repos/{repo}", headers=headers)
                     if not resp.is_success:
                         return f"error: GitHub API returned {resp.status_code}: {resp.text[:200]}"
                     r = resp.json()
-                    return f"Repository {r.get('full_name')}: {r.get('description')} (Stars: {r.get('stargazers_count')}, Forks: {r.get('forks_count')})"
+                    name, desc = r.get("full_name"), r.get("description")
+                    stars, forks = r.get("stargazers_count"), r.get("forks_count")
+                    return f"Repository {name}: {desc} (Stars: {stars}, Forks: {forks})"
 
                 else:
                     return f"error: unknown action '{action}'"

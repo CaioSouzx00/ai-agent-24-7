@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import base64
-from email.message import EmailMessage
 import logging
+from email.message import EmailMessage
 from typing import Any
 
 import httpx
@@ -31,7 +31,7 @@ class GmailTool(BaseTool):
             },
             "query": {
                 "type": "string",
-                "description": "Search query for list_messages (e.g. 'is:unread', 'from:alice@example.com')",
+                "description": "Search query for list_messages (e.g. 'is:unread')",
             },
             "message_id": {
                 "type": "string",
@@ -115,7 +115,9 @@ class GmailTool(BaseTool):
                     msg.set_content(body)
 
                     raw = base64.urlsafe_b64encode(msg.as_bytes()).decode("utf-8")
-                    resp = await client.post(f"{GMAIL_API}/messages/send", headers=headers, json={"raw": raw})
+                    resp = await client.post(
+                        f"{GMAIL_API}/messages/send", headers=headers, json={"raw": raw}
+                    )
                     if not resp.is_success:
                         return f"error: Gmail API returned {resp.status_code}: {resp.text[:200]}"
                     sent = resp.json()
@@ -198,7 +200,9 @@ class CalendarTool(BaseTool):
                         return "No upcoming events found."
                     lines = ["Upcoming events:"]
                     for ev in events:
-                        start = ev.get("start", {}).get("dateTime") or ev.get("start", {}).get("date")
+                        start = ev.get("start", {}).get("dateTime") or ev.get("start", {}).get(
+                            "date"
+                        )
                         lines.append(f"- {ev.get('summary', 'Untitled')} ({start})")
                     return "\n".join(lines)
 
@@ -207,7 +211,7 @@ class CalendarTool(BaseTool):
                     start_time = kwargs.get("start_time")
                     end_time = kwargs.get("end_time")
                     if not summary or not start_time or not end_time:
-                        return "error: summary, start_time, and end_time are required to create an event"
+                        return "error: summary, start_time, and end_time are required"
 
                     body: dict[str, Any] = {
                         "summary": summary,
@@ -217,11 +221,14 @@ class CalendarTool(BaseTool):
                     if kwargs.get("description"):
                         body["description"] = kwargs["description"]
 
-                    resp = await client.post(f"{CALENDAR_API}/{cal_id}/events", headers=headers, json=body)
+                    resp = await client.post(
+                        f"{CALENDAR_API}/{cal_id}/events", headers=headers, json=body
+                    )
                     if not resp.is_success:
                         return f"error: Calendar API returned {resp.status_code}: {resp.text[:200]}"
                     created = resp.json()
-                    return f"Event created: '{created.get('summary')}' at {start_time} (Link: {created.get('htmlLink')})"
+                    name, link = created.get("summary"), created.get("htmlLink")
+                    return f"Event created: '{name}' at {start_time} (Link: {link})"
 
                 else:
                     return f"error: unknown action '{action}'"

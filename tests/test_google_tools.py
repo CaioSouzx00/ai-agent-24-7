@@ -1,10 +1,8 @@
 """Unit tests for GmailTool and CalendarTool (Task 4)."""
 
 import httpx
-import pytest
 
 from app.tools.google import CalendarTool, GmailTool
-
 
 # ---- Gmail Tests ----
 
@@ -21,7 +19,12 @@ async def test_gmail_list_messages():
         assert "Bearer mock-token" in request.headers["Authorization"]
         return httpx.Response(
             200,
-            json={"messages": [{"id": "msg_001", "threadId": "t_001"}, {"id": "msg_002", "threadId": "t_002"}]},
+            json={
+                "messages": [
+                    {"id": "msg_001", "threadId": "t_001"},
+                    {"id": "msg_002", "threadId": "t_002"},
+                ]
+            },
         )
 
     transport = httpx.MockTransport(mock_handler)
@@ -57,7 +60,12 @@ async def test_gmail_send_message():
 
     transport = httpx.MockTransport(mock_handler)
     tool = GmailTool(access_token="mock-token", transport=transport)
-    result = await tool.run(action="send_message", to="alice@example.com", subject="Meeting", body="Let's meet tomorrow.")
+    result = await tool.run(
+        action="send_message",
+        to="alice@example.com",
+        subject="Meeting",
+        body="Let's meet tomorrow.",
+    )
     assert "Email sent to alice@example.com (Message ID: sent_999)" in result
 
 

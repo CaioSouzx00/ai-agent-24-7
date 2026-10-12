@@ -3,7 +3,6 @@
 import json
 
 import httpx
-import pytest
 
 from app.tools.github import GitHubTool
 
@@ -27,8 +26,18 @@ async def test_github_list_issues():
         return httpx.Response(
             200,
             json=[
-                {"number": 42, "title": "Fix login bug", "state": "open", "html_url": "https://github.com/myorg/myrepo/issues/42"},
-                {"number": 43, "title": "Update README", "state": "open", "html_url": "https://github.com/myorg/myrepo/issues/43"},
+                {
+                    "number": 42,
+                    "title": "Fix login bug",
+                    "state": "open",
+                    "html_url": "https://github.com/myorg/myrepo/issues/42",
+                },
+                {
+                    "number": 43,
+                    "title": "Update README",
+                    "state": "open",
+                    "html_url": "https://github.com/myorg/myrepo/issues/43",
+                },
             ],
         )
 
@@ -76,7 +85,9 @@ async def test_github_create_issue():
 
     transport = httpx.MockTransport(mock_handler)
     tool = GitHubTool(token="ghp_valid", transport=transport)
-    result = await tool.run(action="create_issue", repo="myorg/myrepo", title="New Feature Request", body="Details")
+    result = await tool.run(
+        action="create_issue", repo="myorg/myrepo", title="New Feature Request", body="Details"
+    )
     assert "Issue created: #99" in result
 
 
