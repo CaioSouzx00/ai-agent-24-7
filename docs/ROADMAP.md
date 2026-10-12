@@ -24,7 +24,7 @@ Legend: ✅ done · 🟡 skeleton (TODO) · ⬜ pending
 | 5 | 5.5 Prometheus (`/metrics`) | ✅ |
 | 6 | 6.1 Detection | ✅ (keywords) |
 | 6 | 6.2–6.4 Ticket, alerting, human UI | ⬜ |
-| 7 | 7.1 Docker, 7.4 CI | ✅ |
-| 7 | 7.2, 7.3, 7.5 Deploy/secrets | ⬜ |
+| 7 | 7.1 Docker | ✅ |
+| 7 | 7.2, 7.3, 7.4 (CI/CD removed for now), 7.5 Deploy/secrets | ⬜ |
 | 8 | 8.2 Diagrams | ✅ `docs/architecture.md` |
 | 8 | 8.1, 8.3, 8.4, 8.5 | 🟡 / ⬜ |
