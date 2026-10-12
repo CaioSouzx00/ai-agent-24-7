@@ -7,7 +7,7 @@ Legend: ✅ done · 🟡 skeleton (TODO) · ⬜ pending
 | 0 | 0.1–0.5 Repo, structure, .gitignore/LICENSE/pyproject, pre-commit, CONTRIBUTING/CoC | ✅ |
 | 1 | 1.1 Install NIM (see README) | 🟡 |
 | 1 | 1.2 Python client (`app/llm/nim.py`) | ✅ |
-| 1 | 1.3 Function calling test against a real LLM | ⬜ |
+| 1 | 1.3 Function calling: mocked tests ✅; real LLM via `scripts/smoke_llm.py` | 🟡 needs API key/GPU |
 | 1 | 1.4 `LLMProvider` | ✅ |
 | 1 | 1.5 Local LLM docs | ✅ |
 | 2 | 2.1 FastAPI + health | ✅ |
