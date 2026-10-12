@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import hmac
+import json
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, Query, Request, WebSocket
+from fastapi import Depends, FastAPI, HTTPException, Query, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import PlainTextResponse
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, generate_latest
 from pydantic import BaseModel
@@ -14,6 +16,12 @@ from app.agent.graph import build_graph
 from app.config import get_settings
 from app.llm import get_llm
 from app.memory import InMemorySessionStore, LongTermMemory, SessionStore
+from app.security import (
+    require_api_key,
+    verify_meta_signature,
+    verify_slack_signature,
+    websocket_authorized,
+)
 from app.tools import integrations  # noqa: F401  (registers tools)
 from app.tools.base import registry
 
@@ -82,22 +90,41 @@ async def tools_docs():
     return PlainTextResponse(registry.docs())
 
 
-@app.post("/chat")
+@app.post("/chat", dependencies=[Depends(require_api_key)])
 async def chat(body: ChatIn):
     return await _run(body.session_id, body.message, "rest")
 
 
 @app.websocket("/ws/{session_id}")
 async def ws_chat(ws: WebSocket, session_id: str):
+    if not websocket_authorized(ws):
+        await ws.close(code=1008)  # policy violation
+        return
     await ws.accept()
-    while True:
-        text = await ws.receive_text()
-        await ws.send_json(await _run(session_id, text, "ws"))
+    try:
+        while True:
+            text = await ws.receive_text()
+            await ws.send_json(await _run(session_id, text, "ws"))
+    except WebSocketDisconnect:
+        pass
 
 
 @app.post("/webhooks/slack")
 async def slack_webhook(request: Request):
-    payload = await request.json()
+    body = await request.body()
+    secret = get_settings().slack_signing_secret
+    if not secret:
+        raise HTTPException(503, "SLACK_SIGNING_SECRET is not configured")
+    if not verify_slack_signature(
+        secret,
+        request.headers.get("x-slack-request-timestamp"),
+        request.headers.get("x-slack-signature"),
+        body,
+    ):
+        raise HTTPException(401, "invalid Slack signature")
+    if request.headers.get("x-slack-retry-num"):
+        return {"ok": True}  # already handled; avoid duplicate replies on Slack retries
+    payload = json.loads(body)
     if payload.get("type") == "url_verification":
         return {"challenge": payload["challenge"]}
     event = payload.get("event", {})
@@ -112,14 +139,21 @@ async def whatsapp_verify(
     token: str = Query(alias="hub.verify_token"),
     challenge: str = Query(alias="hub.challenge"),
 ):
-    if mode == "subscribe" and token == get_settings().whatsapp_verify_token:
+    expected = get_settings().whatsapp_verify_token
+    if expected and mode == "subscribe" and hmac.compare_digest(token, expected):
         return PlainTextResponse(challenge)
     raise HTTPException(403)
 
 
 @app.post("/webhooks/whatsapp")
 async def whatsapp_webhook(request: Request):
-    data = await request.json()
+    body = await request.body()
+    secret = get_settings().whatsapp_app_secret
+    if not secret:
+        raise HTTPException(503, "WHATSAPP_APP_SECRET is not configured")
+    if not verify_meta_signature(secret, request.headers.get("x-hub-signature-256"), body):
+        raise HTTPException(401, "invalid WhatsApp signature")
+    data = json.loads(body)
     try:
         msg = data["entry"][0]["changes"][0]["value"]["messages"][0]
         return await _run(msg["from"], msg["text"]["body"], "whatsapp")

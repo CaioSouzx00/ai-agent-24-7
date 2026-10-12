@@ -18,8 +18,8 @@ Legend: ✅ done · 🟡 skeleton (TODO) · ⬜ pending
 | 3 | 3.1 BaseTool / 3.8 Registry | ✅ |
 | 3 | 3.2 Web (fetch+search), 3.5 Slack | ✅ (no headless browser) |
 | 3 | 3.3 Gmail, 3.4 Calendar, 3.6 GitHub, 3.7 Vision | 🟡 stubs (not exposed to LLM) |
-| 4 | 4.1 REST+WS, 4.2 Slack, 4.3 WhatsApp | ✅ basic (no signature check) |
-| 4 | 4.4 Pub/Sub, 4.5 Auth | ⬜ |
+| 4 | 4.1 REST+WS (API-key auth), 4.2 Slack, 4.3 WhatsApp (signature verified) | ✅ |
+| 4 | 4.4 Pub/Sub, 4.5 user auth (Clerk/Auth0) | ⬜ API keys only for now |
 | 5 | 5.1 Temporal | 🟡 `app/workflows.py` |
 | 5 | 5.2 DLQ, 5.3 real readiness, 5.4 logs/Sentry | 🟡 Sentry via DSN |
 | 5 | 5.5 Prometheus (`/metrics`) | ✅ |

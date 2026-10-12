@@ -21,6 +21,8 @@ class Settings(BaseSettings):
     slack_handoff_webhook: str = ""
     github_token: str = ""
     whatsapp_verify_token: str = ""
+    whatsapp_app_secret: str = ""
+    api_keys: str = ""  # comma-separated keys accepted by /chat and /ws; empty = open in dev only
     whatsapp_token: str = ""
     sentry_dsn: str = ""
     temporal_address: str = "localhost:7233"
