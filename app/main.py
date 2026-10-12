@@ -1,4 +1,4 @@
-"""FastAPI: health checks, chat REST/WebSocket e webhooks (Fases 2, 4, 5)."""
+"""FastAPI: health checks, REST/WebSocket chat and webhooks (Phases 2, 4, 5)."""
 
 from __future__ import annotations
 
@@ -12,10 +12,10 @@ from pydantic import BaseModel
 from app.agent.graph import build_graph
 from app.config import get_settings
 from app.llm import get_llm
-from app.tools import integrations  # noqa: F401  (registra tools)
+from app.tools import integrations  # noqa: F401  (registers tools)
 from app.tools.base import registry
 
-REQUESTS = Counter("agent_requests_total", "Total de mensagens processadas", ["channel"])
+REQUESTS = Counter("agent_requests_total", "Total messages processed", ["channel"])
 
 
 class ChatIn(BaseModel):
@@ -50,7 +50,7 @@ async def health():
 
 @app.get("/ready")
 async def ready():
-    return {"status": "ready"}  # TODO(Task 5.3): checar Redis/Postgres/LLM
+    return {"status": "ready"}  # TODO(Task 5.3): check Redis/Postgres/LLM
 
 
 @app.get("/metrics")

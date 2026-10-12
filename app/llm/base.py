@@ -1,4 +1,4 @@
-"""Abstração LLMProvider (Task 1.4)."""
+"""LLMProvider abstraction (Task 1.4)."""
 
 from __future__ import annotations
 
@@ -28,4 +28,4 @@ class LLMProvider(ABC):
         tools: list[dict[str, Any]] | None = None,
         temperature: float = 0.2,
     ) -> LLMResponse:
-        """Envia mensagens (formato OpenAI) e retorna resposta + tool calls."""
+        """Send messages (OpenAI format) and return the response + tool calls."""

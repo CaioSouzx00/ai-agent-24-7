@@ -1,4 +1,4 @@
-"""Interface padrão de Tool (Task 3.1) e registro central (Task 3.8)."""
+"""Standard Tool interface (Task 3.1) and central registry (Task 3.8)."""
 
 from __future__ import annotations
 
@@ -39,7 +39,7 @@ class ToolRegistry:
         return [t.schema() for t in self._tools.values()]
 
     def docs(self) -> str:
-        """Documentação automática em Markdown."""
+        """Auto-generated Markdown documentation."""
         return "\n".join(f"- **{t.name}**: {t.description}" for t in self._tools.values())
 
 

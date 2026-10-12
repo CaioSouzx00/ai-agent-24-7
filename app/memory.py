@@ -1,4 +1,4 @@
-"""Sessão (Redis, Task 2.3) e memória de longo prazo (pgvector, Task 2.4)."""
+"""Sessions (Redis, Task 2.3) and long-term memory (pgvector, Task 2.4)."""
 
 from __future__ import annotations
 
@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS memories (
 
 
 class LongTermMemory:
-    """TODO(Task 2.4): gerar embeddings (NIM embeddings) e buscar por similaridade."""
+    """TODO(Task 2.4): generate embeddings (NIM embeddings) and search by similarity."""
 
     def __init__(self, dsn: str):
         self.dsn = dsn

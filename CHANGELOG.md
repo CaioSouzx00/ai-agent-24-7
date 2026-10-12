@@ -1,6 +1,6 @@
 # Changelog
-Formato [Keep a Changelog](https://keepachangelog.com/) e [SemVer](https://semver.org/lang/pt-BR/).
+Format: [Keep a Changelog](https://keepachangelog.com/) and [SemVer](https://semver.org/).
 
 ## [Unreleased]
 ### Added
-- Estrutura inicial do projeto (Fases 0–8 em esqueleto)
+- Initial project skeleton (phases 0–8)

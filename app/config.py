@@ -1,4 +1,4 @@
-"""Configuração central via variáveis de ambiente."""
+"""Central configuration via environment variables."""
 
 from functools import lru_cache
 

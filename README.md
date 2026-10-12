@@ -1,46 +1,46 @@
 # ai-agent-24-7
 
-Agente de IA que roda 24/7 com **LLM local da NVIDIA (NIM)**, memória, tools (web, Gmail, Calendar, Slack, GitHub, visão), múltiplos canais e handoff para humanos.
+24/7 AI agent powered by a **local NVIDIA NIM LLM**, with long-term memory, tool use (web, Gmail, Calendar, Slack, GitHub, vision), multi-channel inputs, and human handoff.
 
-- Arquitetura: [docs/architecture.md](docs/architecture.md)
+- Architecture: [docs/architecture.md](docs/architecture.md)
 - Roadmap/status: [docs/ROADMAP.md](docs/ROADMAP.md)
 
-## Rodando a LLM local
+## Running the local LLM
 
-### Com GPU NVIDIA (NIM)
-Requisitos: driver NVIDIA, Docker + NVIDIA Container Toolkit, conta NGC.
+### With an NVIDIA GPU (NIM)
+Requirements: NVIDIA driver, Docker + NVIDIA Container Toolkit, an NGC account.
 ```bash
-export NGC_API_KEY=<sua-chave>
+export NGC_API_KEY=<your-key>
 docker compose -f infra/docker-compose.yml --profile gpu up nim
 ```
-A API OpenAI-compatível fica em `http://localhost:8000/v1`.
+The OpenAI-compatible API is served at `http://localhost:8000/v1`.
 
-### Sem GPU
-NIM exige GPU. Alternativas: usar o endpoint hospedado `https://integrate.api.nvidia.com/v1`
-(defina `NIM_BASE_URL` e `NIM_API_KEY` com a chave do build.nvidia.com), ou implementar
-um `LLMProvider` para Ollama.
+### Without a GPU
+NIM requires a GPU. Alternatives: use the hosted endpoint `https://integrate.api.nvidia.com/v1`
+(set `NIM_BASE_URL` and `NIM_API_KEY` with a key from build.nvidia.com), or implement
+an `LLMProvider` for Ollama.
 
-## Rodando o agente
+## Running the agent
 ```bash
 cp .env.example .env
 pip install -e ".[dev]"
 uvicorn app.main:app --reload --port 8080
 curl -X POST localhost:8080/chat -H "content-type: application/json" \
-  -d '{"session_id":"demo","message":"Olá!"}'
+  -d '{"session_id":"demo","message":"Hello!"}'
 ```
-Stack completa: `docker compose -f infra/docker-compose.yml --profile gpu up --build`.
+Full stack: `docker compose -f infra/docker-compose.yml --profile gpu up --build`.
 
-## Testes
+## Tests
 ```bash
 pytest
 ```
 
-## Estrutura
+## Structure
 ```
-app/    código (agent/, llm/, tools/, main.py, memory.py, workflows.py)
-infra/  Dockerfile e docker-compose
-tests/  testes
-docs/   documentação
+app/    code (agent/, llm/, tools/, main.py, memory.py, workflows.py)
+infra/  Dockerfile and docker-compose
+tests/  tests
+docs/   documentation
 ```
 
-Veja [CONTRIBUTING.md](CONTRIBUTING.md) · [CHANGELOG.md](CHANGELOG.md) · Licença MIT.
+See [CONTRIBUTING.md](CONTRIBUTING.md) · [CHANGELOG.md](CHANGELOG.md) · MIT License.

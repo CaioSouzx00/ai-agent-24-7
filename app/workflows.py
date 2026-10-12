@@ -1,4 +1,4 @@
-"""Workflows Temporal (Tasks 5.1/5.2) — esqueleto."""
+"""Temporal workflows (Tasks 5.1/5.2) — skeleton."""
 
 from datetime import timedelta
 
@@ -8,7 +8,7 @@ from temporalio.common import RetryPolicy
 
 @activity.defn
 async def process_message(session_id: str, message: str) -> str:
-    # TODO: chamar o grafo do agente
+    # TODO: call the agent graph
     return f"processed:{message}"
 
 

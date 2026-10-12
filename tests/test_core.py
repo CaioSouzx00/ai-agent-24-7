@@ -16,36 +16,34 @@ class FakeLLM(LLMProvider):
 
 class EchoTool(BaseTool):
     name = "echo"
-    description = "ecoa"
+    description = "echoes"
 
     async def run(self, **kwargs):
         return f"echo:{kwargs['text']}"
 
 
 def test_handoff_detection():
-    assert needs_handoff("Quero falar com humano sobre reembolso")
-    assert not needs_handoff("Qual a previsão do tempo?")
+    assert needs_handoff("I want to talk to a human about a refund")
+    assert not needs_handoff("What is the weather like?")
 
 
 async def test_simple_flow():
-    graph = build_graph(FakeLLM([LLMResponse("olá!")]), ToolRegistry())
-    out = await graph.ainvoke({"session_id": "s", "user_input": "oi"})
-    assert out["response"] == "olá!"
+    graph = build_graph(FakeLLM([LLMResponse("hello!")]), ToolRegistry())
+    out = await graph.ainvoke({"session_id": "s", "user_input": "hi"})
+    assert out["response"] == "hello!"
 
 
 async def test_tool_flow():
     reg = ToolRegistry()
     reg.register(EchoTool())
-    llm = FakeLLM(
-        [LLMResponse("", [ToolCall("echo", {"text": "x"})]), LLMResponse("feito: echo:x")]
-    )
+    llm = FakeLLM([LLMResponse("", [ToolCall("echo", {"text": "x"})]), LLMResponse("done: echo:x")])
     out = await build_graph(llm, reg).ainvoke({"session_id": "s", "user_input": "use echo"})
-    assert out["response"] == "feito: echo:x"
+    assert out["response"] == "done: echo:x"
 
 
 async def test_handoff_flow():
     graph = build_graph(FakeLLM([]), ToolRegistry())
-    out = await graph.ainvoke({"session_id": "s", "user_input": "preciso de um advogado"})
+    out = await graph.ainvoke({"session_id": "s", "user_input": "I need a lawyer"})
     assert out["handoff"] is True
 
 

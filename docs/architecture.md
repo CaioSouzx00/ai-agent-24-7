@@ -1,23 +1,23 @@
-# Arquitetura
+# Architecture
 
 ```mermaid
 flowchart LR
-    subgraph Canais
+    subgraph Channels
         W[Web REST/WS] --- S[Slack] --- WA[WhatsApp]
     end
-    Canais --> API[FastAPI]
+    Channels --> API[FastAPI]
     API --> T[Temporal Workflow]
     T --> G[LangGraph]
     G --> IC[Intent Classifier]
-    IC -->|sensível| H[Handoff humano]
+    IC -->|sensitive| H[Human handoff]
     IC --> MR[Memory Retriever]
     MR --> P[Planner]
     P --> TE[Tool Executor]
     TE --> RG[Response Generator]
     P --> LLM[(NVIDIA NIM)]
     MR --> PG[(Postgres + pgvector)]
-    API --> R[(Redis sessão)]
+    API --> R[(Redis sessions)]
     TE --> Tools[Web / Gmail / Calendar / Slack / GitHub / Vision]
 ```
 
-Troca de LLM: implemente `LLMProvider` (`app/llm/base.py`) e registre em `app/llm/__init__.py`.
+Swapping the LLM: implement `LLMProvider` (`app/llm/base.py`) and register it in `app/llm/__init__.py`.

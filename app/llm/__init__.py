@@ -7,7 +7,7 @@ def get_llm() -> LLMProvider:
     s = get_settings()
     if s.llm_provider == "nim":
         return NIMProvider(s.nim_base_url, s.nim_model, s.nim_api_key)
-    raise ValueError(f"LLM provider desconhecido: {s.llm_provider}")
+    raise ValueError(f"Unknown LLM provider: {s.llm_provider}")
 
 
 __all__ = ["LLMProvider", "LLMResponse", "ToolCall", "NIMProvider", "get_llm"]

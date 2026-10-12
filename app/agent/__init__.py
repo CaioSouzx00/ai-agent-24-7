@@ -1,1 +1,1 @@
-"""Agente LangGraph."""
+"""LangGraph agent."""

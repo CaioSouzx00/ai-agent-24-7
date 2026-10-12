@@ -1,12 +1,20 @@
-"""Detecção de intenção complexa/sensível (Task 6.1)."""
+"""Sensitive/complex intent detection (Task 6.1)."""
 
 SENSITIVE_KEYWORDS = (
+    "refund",
+    "cancel contract",
+    "lawsuit",
+    "lawyer",
+    "fraud",
+    "formal complaint",
+    "talk to a human",
+    "human agent",
+    # Portuguese
     "reembolso",
     "cancelar contrato",
     "processo judicial",
     "advogado",
     "fraude",
-    "reclamação formal",
     "falar com humano",
     "atendente",
 )

@@ -1,20 +1,20 @@
-# Código de Conduta
+# Code of Conduct
 
-Nos comprometemos a manter uma comunidade aberta, respeitosa e livre de assédio.
+We are committed to keeping our community open, respectful, and harassment-free.
 
-## Padrões esperados
-- Linguagem acolhedora e inclusiva
-- Respeito a pontos de vista diferentes
-- Aceitar críticas construtivas com elegância
-- Foco no que é melhor para a comunidade
+## Expected behavior
+- Welcoming and inclusive language
+- Respect for differing viewpoints
+- Graciously accepting constructive criticism
+- Focusing on what is best for the community
 
-## Comportamentos inaceitáveis
-- Assédio, insultos ou ataques pessoais
-- Divulgar informações privadas de terceiros
-- Qualquer conduta considerada inadequada em ambiente profissional
+## Unacceptable behavior
+- Harassment, insults, or personal attacks
+- Publishing others' private information
+- Any conduct considered inappropriate in a professional setting
 
-## Aplicação
-Casos podem ser reportados aos mantenedores via issue privada ou e-mail do repositório.
-Mantenedores podem remover contribuições e banir participantes que violem este código.
+## Enforcement
+Incidents can be reported to the maintainers via a private issue or the repository contact email.
+Maintainers may remove contributions and ban participants who violate this code.
 
-Baseado no [Contributor Covenant 2.1](https://www.contributor-covenant.org/version/2/1/code_of_conduct/).
+Based on the [Contributor Covenant 2.1](https://www.contributor-covenant.org/version/2/1/code_of_conduct/).

@@ -1,4 +1,4 @@
-"""Grafo do agente (Task 2.2): classify, memory, plan, tools, respond, com handoff."""
+"""Agent graph (Task 2.2): classify, memory, plan, tools, respond, with handoff."""
 
 from __future__ import annotations
 
@@ -33,9 +33,9 @@ def build_graph(llm: LLMProvider, tools: ToolRegistry, memory_retriever=None):
         return {"memories": mems}
 
     async def plan(state: AgentState) -> AgentState:
-        system = "Você é um assistente útil."
+        system = "You are a helpful assistant."
         if state.get("memories"):
-            system += "\nContexto:\n" + "\n".join(state["memories"])
+            system += "\nContext:\n" + "\n".join(state["memories"])
         msgs = [
             {"role": "system", "content": system},
             {"role": "user", "content": state["user_input"]},
@@ -48,22 +48,20 @@ def build_graph(llm: LLMProvider, tools: ToolRegistry, memory_retriever=None):
         for call in state.get("tool_calls", []):
             tool = tools.get(call.name)
             try:
-                results.append(await tool.run(**call.arguments) if tool else "tool inexistente")
+                results.append(await tool.run(**call.arguments) if tool else "unknown tool")
             except Exception as exc:  # noqa: BLE001
-                results.append(f"erro: {exc}")
+                results.append(f"error: {exc}")
         return {"tool_results": results}
 
     async def respond(state: AgentState) -> AgentState:
         if state.get("tool_results"):
             results = "\n".join(state["tool_results"])
-            msgs = state["messages"] + [
-                {"role": "user", "content": "Resultados das tools:\n" + results}
-            ]
+            msgs = state["messages"] + [{"role": "user", "content": "Tool results:\n" + results}]
             return {"response": (await llm.chat(msgs)).content}
         return {}
 
     async def handoff(state: AgentState) -> AgentState:
-        return {"response": "Encaminhei sua solicitação para um atendente humano."}
+        return {"response": "I have forwarded your request to a human agent."}
 
     g = StateGraph(AgentState)
     g.add_node("classify_intent", classify_intent)

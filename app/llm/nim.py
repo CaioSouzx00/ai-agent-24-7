@@ -1,4 +1,4 @@
-"""Cliente para NVIDIA NIM (API compatível com OpenAI) — Tasks 1.2 e 1.3."""
+"""Client for NVIDIA NIM (OpenAI-compatible API) — Tasks 1.2 and 1.3."""
 
 from __future__ import annotations
 
