@@ -8,12 +8,13 @@ import logging
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request, WebSocket, WebSocketDisconnect
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, generate_latest
 from pydantic import BaseModel
 
 from app.agent.graph import build_graph
 from app.config import get_settings
+from app.health import readiness
 from app.llm import get_llm
 from app.memory import InMemorySessionStore, LongTermMemory, SessionStore
 from app.security import (
@@ -55,6 +56,7 @@ async def lifespan(app: FastAPI):
     except Exception as exc:  # noqa: BLE001
         log.warning("Postgres/pgvector unavailable; long-term memory disabled (%s)", exc)
 
+    app.state.llm = llm
     app.state.sessions = session_store
     app.state.memory = memory
     app.state.graph = build_graph(llm, registry, session_store, memory)
@@ -77,7 +79,8 @@ async def health():
 
 @app.get("/ready")
 async def ready():
-    return {"status": "ready"}  # TODO(Task 5.3): check Redis/Postgres/LLM
+    code, body = await readiness(app.state.llm, app.state.sessions, app.state.memory)
+    return JSONResponse(body, status_code=code)
 
 
 @app.get("/metrics")

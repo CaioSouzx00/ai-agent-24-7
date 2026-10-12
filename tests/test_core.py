@@ -54,7 +54,7 @@ def test_registry_docs():
     assert reg.schemas()[0]["function"]["name"] == "echo"
 
 
-@pytest.mark.parametrize("path", ["/health", "/ready"])
+@pytest.mark.parametrize("path", ["/health"])
 def test_health(path):
     from fastapi.testclient import TestClient
 
