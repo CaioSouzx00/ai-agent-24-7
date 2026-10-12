@@ -1,25 +1,21 @@
-"""Integration tools (Tasks 3.2–3.7) — skeletons to be implemented."""
+"""Registers the tools exposed to the LLM.
+
+Only implemented tools are registered. The stubs below (Tasks 3.3, 3.4, 3.6, 3.7) are NOT
+advertised to the model until they are implemented.
+"""
 
 from __future__ import annotations
 
 from typing import Any
 
 from app.tools.base import BaseTool, registry
+from app.tools.slack import SlackTool
+from app.tools.web import WebBrowseTool, WebSearchTool
 
 
 class _Stub(BaseTool):
     async def run(self, **kwargs: Any) -> str:
         raise NotImplementedError(f"Tool '{self.name}' is not implemented yet")
-
-
-class WebBrowseTool(_Stub):  # Task 3.2 (Playwright)
-    name = "web_browse"
-    description = "Browse a URL and return the page text."
-    parameters = {
-        "type": "object",
-        "properties": {"url": {"type": "string"}},
-        "required": ["url"],
-    }
 
 
 class GmailTool(_Stub):  # Task 3.3
@@ -32,11 +28,6 @@ class CalendarTool(_Stub):  # Task 3.4
     description = "List or create events in Google Calendar."
 
 
-class SlackTool(_Stub):  # Task 3.5
-    name = "slack"
-    description = "Send messages on Slack."
-
-
 class GitHubTool(_Stub):  # Task 3.6
     name = "github"
     description = "Query issues/PRs and create issues on GitHub."
@@ -47,12 +38,5 @@ class ImageAnalysisTool(_Stub):  # Task 3.7
     description = "Analyze an image with a multimodal LLM."
 
 
-for _t in (
-    WebBrowseTool(),
-    GmailTool(),
-    CalendarTool(),
-    SlackTool(),
-    GitHubTool(),
-    ImageAnalysisTool(),
-):
+for _t in (WebBrowseTool(), WebSearchTool(), SlackTool()):
     registry.register(_t)
