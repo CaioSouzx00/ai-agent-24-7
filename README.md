@@ -44,3 +44,8 @@ docs/   documentation
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) · [CHANGELOG.md](CHANGELOG.md) · MIT License.
+
+## Validating the LLM
+```bash
+python scripts/smoke_llm.py   # plain chat + function calling against NIM_BASE_URL
+```
