@@ -18,7 +18,8 @@ class Settings(BaseSettings):
     database_url: str = "postgresql://agent:agent@localhost:5432/agent"
     slack_bot_token: str = ""
     slack_signing_secret: str = ""
-    slack_handoff_webhook: str = ""
+    slack_handoff_webhook: str = ""  # Slack or Teams incoming-webhook URL for handoff alerts
+    public_url: str = ""  # public base URL, used in handoff alert links
     github_token: str = ""
     whatsapp_verify_token: str = ""
     whatsapp_app_secret: str = ""

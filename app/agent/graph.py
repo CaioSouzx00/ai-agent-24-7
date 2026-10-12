@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+from collections.abc import Awaitable, Callable
 from typing import Any, TypedDict
 
 from langgraph.graph import END, StateGraph
@@ -11,6 +12,7 @@ from langgraph.graph import END, StateGraph
 from app.agent.handoff import needs_handoff
 from app.llm.base import LLMProvider, ToolCall
 from app.memory import LongTermMemory, SessionBackend
+from app.tickets import InMemoryTicketStore, Ticket
 from app.tools.base import ToolRegistry
 
 log = logging.getLogger(__name__)
@@ -29,6 +31,9 @@ class AgentState(TypedDict, total=False):
     rounds: int
     response: str
     handoff: bool
+    paused: bool
+    channel: str
+    meta: dict[str, Any]
 
 
 def build_graph(
@@ -36,10 +41,28 @@ def build_graph(
     tools: ToolRegistry,
     session_store: SessionBackend | None = None,
     memory: LongTermMemory | None = None,
+    tickets: InMemoryTicketStore | None = None,
+    notifier: Callable[[Ticket], Awaitable[Any]] | None = None,
 ):
     async def classify_intent(state: AgentState) -> AgentState:
+        if tickets and await tickets.active_for(state["session_id"]):
+            return {"intent": "paused", "paused": True, "handoff": True}
         handoff = needs_handoff(state["user_input"])
-        return {"intent": "sensitive" if handoff else "general", "handoff": handoff}
+        return {
+            "intent": "sensitive" if handoff else "general",
+            "paused": False,
+            "handoff": handoff,
+        }
+
+    async def paused(state: AgentState) -> AgentState:
+        """A human owns this conversation: record the message and stay silent."""
+        sid, text = state["session_id"], state["user_input"]
+        ticket = await tickets.active_for(sid)
+        if ticket:
+            await tickets.add_message(ticket.id, "user", text)
+        if session_store:
+            await session_store.append(sid, {"role": "user", "content": text})
+        return {"response": ""}
 
     async def retrieve_memory(state: AgentState) -> AgentState:
         if not memory:
@@ -106,6 +129,18 @@ def build_graph(
         return {"messages": msgs, "tool_calls": []}
 
     async def handoff(state: AgentState) -> AgentState:
+        sid, text = state["session_id"], state["user_input"]
+        if tickets:
+            history = await session_store.get(sid) if session_store else []
+            ticket = await tickets.create(
+                sid,
+                state.get("channel", "unknown"),
+                state.get("meta") or {},
+                [*history, {"role": "user", "content": text}],
+                reason="sensitive request detected",
+            )
+            if notifier:
+                await notifier(ticket)
         return {"response": "I have forwarded your request to a human agent."}
 
     async def save_turn(state: AgentState) -> AgentState:
@@ -130,11 +165,14 @@ def build_graph(
     g.add_node("think", think)
     g.add_node("execute_tools", execute_tools)
     g.add_node("handoff", handoff)
+    g.add_node("paused", paused)
     g.add_node("save_turn", save_turn)
     g.set_entry_point("classify_intent")
     g.add_conditional_edges(
-        "classify_intent", lambda s: "handoff" if s["handoff"] else "retrieve_memory"
+        "classify_intent",
+        lambda s: ("paused" if s["paused"] else "handoff" if s["handoff"] else "retrieve_memory"),
     )
+    g.add_edge("paused", END)
     g.add_edge("retrieve_memory", "prepare")
     g.add_edge("prepare", "think")
     g.add_conditional_edges(

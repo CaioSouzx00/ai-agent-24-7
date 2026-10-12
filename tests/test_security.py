@@ -33,9 +33,21 @@ def env(monkeypatch):
     get_settings.cache_clear()
 
 
+class FakeSenders:
+    def __init__(self):
+        self.sent = []
+
+    async def slack(self, channel, text):
+        self.sent.append(("slack", channel, text))
+
+    async def whatsapp(self, to, text, phone_id):
+        self.sent.append(("whatsapp", to, text, phone_id))
+
+
 @pytest.fixture
 def client():
     app.state.graph = FakeGraph()
+    app.state.senders = FakeSenders()
     return TestClient(app)  # no lifespan: avoids connecting to Redis/Postgres
 
 
@@ -102,7 +114,8 @@ def test_slack_url_verification_and_message(client, env):
 
     body = json.dumps({"event": {"type": "message", "channel": "C1", "text": "hi"}}).encode()
     r = client.post("/webhooks/slack", content=body, headers=slack_headers("s3cret", body))
-    assert r.json()["response"] == "echo:hi"
+    assert r.json() == {"ok": True}
+    assert app.state.senders.sent == [("slack", "C1", "echo:hi")]
 
 
 def test_slack_retries_are_ignored(client, env):
@@ -119,15 +132,18 @@ def test_slack_retries_are_ignored(client, env):
 
 def wa_body(text="hello"):
     msg = {"from": "551199", "text": {"body": text}}
-    return json.dumps({"entry": [{"changes": [{"value": {"messages": [msg]}}]}]}).encode()
+    value = {"messages": [msg], "metadata": {"phone_number_id": "PN1"}}
+    return json.dumps({"entry": [{"changes": [{"value": value}]}]}).encode()
 
 
 def test_whatsapp_signature_required(client, env):
     env(WHATSAPP_APP_SECRET="k")
     body = wa_body()
     assert client.post("/webhooks/whatsapp", content=body).status_code == 401
+    assert app.state.senders.sent == []
     ok = client.post("/webhooks/whatsapp", content=body, headers=meta_headers("k", body))
-    assert ok.json()["response"] == "echo:hello"
+    assert ok.json() == {"ok": True}
+    assert app.state.senders.sent == [("whatsapp", "551199", "echo:hello", "PN1")]
 
 
 def test_whatsapp_rejects_when_secret_missing(client, env):

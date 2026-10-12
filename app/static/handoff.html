@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Human Handoff Console</title>
+  <meta name="description" content="Take over conversations escalated by the AI agent.">
+  <style>
+    :root { --bg:#0f1220; --panel:#181c30; --line:#262b45; --text:#e8eaf6; --muted:#8b91b3; --acc:#7c5cff; --ok:#2ecc9a; --warn:#ffb020; }
+    * { box-sizing: border-box; }
+    body { margin:0; font:14px/1.5 Inter, system-ui, sans-serif; background:var(--bg); color:var(--text); }
+    header { display:flex; gap:12px; align-items:center; padding:14px 20px; border-bottom:1px solid var(--line); }
+    h1 { font-size:16px; margin:0; flex:1; }
+    input, button, select { font:inherit; color:var(--text); background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:8px 10px; }
+    button { cursor:pointer; background:var(--acc); border-color:var(--acc); transition:transform .1s; }
+    button:hover { transform:translateY(-1px); }
+    button.ghost { background:transparent; border-color:var(--line); }
+    main { display:grid; grid-template-columns:320px 1fr; height:calc(100vh - 61px); }
+    #list { border-right:1px solid var(--line); overflow:auto; }
+    .item { padding:12px 16px; border-bottom:1px solid var(--line); cursor:pointer; }
+    .item:hover, .item.active { background:var(--panel); }
+    .badge { font-size:11px; padding:2px 8px; border-radius:99px; background:var(--line); color:var(--muted); }
+    .badge.open { background:#3a2c0a; color:var(--warn); } .badge.claimed { background:#1f2c52; color:#8fa8ff; } .badge.resolved { background:#0d3a2c; color:var(--ok); }
+    #detail { display:flex; flex-direction:column; min-width:0; }
+    #msgs { flex:1; overflow:auto; padding:20px; display:flex; flex-direction:column; gap:10px; }
+    .m { max-width:70%; padding:10px 14px; border-radius:14px; background:var(--panel); white-space:pre-wrap; word-break:break-word; }
+    .m.user { align-self:flex-start; } .m.assistant { align-self:flex-end; background:#222744; } .m.human { align-self:flex-end; background:var(--acc); }
+    .m small { display:block; color:var(--muted); font-size:11px; margin-bottom:2px; }
+    #bar { display:flex; gap:8px; padding:14px 20px; border-top:1px solid var(--line); }
+    #bar input { flex:1; }
+    .empty { margin:auto; color:var(--muted); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Human Handoff Console</h1>
+    <input id="key" type="password" placeholder="API key (empty in dev)" autocomplete="off">
+    <input id="me" placeholder="Your name" value="human">
+    <select id="filter"><option value="">all</option><option value="open" selected>open</option><option value="claimed">claimed</option><option value="resolved">resolved</option></select>
+    <button id="refresh" class="ghost">Refresh</button>
+  </header>
+  <main>
+    <section id="list"></section>
+    <section id="detail"><p class="empty">Select a ticket</p></section>
+  </main>
+<script>
+const $ = (id) => document.getElementById(id);
+let current = null;
+$("key").value = sessionStorage.getItem("key") || "";
+
+async function api(path, opts = {}) {
+  const key = $("key").value; sessionStorage.setItem("key", key);
+  const res = await fetch("/handoff" + path, { ...opts, headers: { "Content-Type": "application/json", ...(key ? { "X-API-Key": key } : {}) } });
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).detail || res.statusText);
+  return res.json();
+}
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+
+async function loadList() {
+  const f = $("filter").value;
+  try {
+    const tickets = await api("/tickets" + (f ? "?status=" + f : ""));
+    $("list").innerHTML = tickets.map((t) => `
+      <div class="item ${current === t.id ? "active" : ""}" data-id="${esc(t.id)}">
+        <div><b>${esc(t.channel)}</b> · ${esc(t.session_id)} <span class="badge ${esc(t.status)}">${esc(t.status)}</span></div>
+        <div style="color:var(--muted)">${esc((t.messages.at(-1) || {}).content || "").slice(0, 70)}</div>
+      </div>`).join("") || '<p class="empty" style="padding:16px">No tickets</p>';
+    document.querySelectorAll(".item").forEach((el) => el.onclick = () => open(el.dataset.id));
+  } catch (e) { $("list").innerHTML = `<p class="empty" style="padding:16px">${esc(e.message)}</p>`; }
+}
+
+async function open(id) {
+  current = id;
+  const t = await api("/tickets/" + id);
+  $("detail").innerHTML = `
+    <div id="msgs">${t.messages.map((m) => `<div class="m ${esc(m.role)}"><small>${esc(m.role)}</small>${esc(m.content)}</div>`).join("")}</div>
+    <div id="bar">
+      <input id="text" placeholder="Type a reply…" ${t.status === "resolved" ? "disabled" : ""}>
+      <button id="send">Send</button><button id="claim" class="ghost">Claim</button><button id="resolve" class="ghost">Resolve</button>
+    </div>`;
+  const box = $("msgs"); box.scrollTop = box.scrollHeight;
+  const act = async (fn) => { try { await fn(); await open(id); await loadList(); } catch (e) { alert(e.message); } };
+  $("send").onclick = () => act(() => api(`/tickets/${id}/reply`, { method: "POST", body: JSON.stringify({ text: $("text").value, assignee: $("me").value }) }));
+  $("text").onkeydown = (e) => { if (e.key === "Enter") $("send").click(); };
+  $("claim").onclick = () => act(() => api(`/tickets/${id}/claim`, { method: "POST", body: JSON.stringify({ assignee: $("me").value }) }));
+  $("resolve").onclick = () => act(() => api(`/tickets/${id}/resolve`, { method: "POST" }));
+  loadList();
+}
+
+$("refresh").onclick = () => { loadList(); if (current) open(current); };
+$("filter").onchange = loadList;
+loadList(); setInterval(loadList, 15000);
+</script>
+</body>
+</html>
