@@ -23,8 +23,14 @@ def main() -> None:
 
     with httpx.Client(base_url=BASE_URL, timeout=15.0) as client:
         # Step 1: Customer sends a sensitive trigger message
-        print("\n1️⃣ [Cliente]: 'Estou muito insatisfeito, quero meu reembolso e falar com um atendente!'")
-        r1 = client.post("/chat", json={"session_id": session_id, "message": "Quero meu reembolso e falar com um atendente!"})
+        print("\n1️⃣ [Cliente]: 'Quero meu reembolso e falar com um atendente!'")
+        r1 = client.post(
+            "/chat",
+            json={
+                "session_id": session_id,
+                "message": "Quero meu reembolso e falar com um atendente!",
+            },
+        )
         data1 = r1.json()
         print(f"   🤖 Resposta do Bot: {data1.get('response')}")
         print(f"   🚩 Handoff ativado: {data1.get('handoff')} | Pausado: {data1.get('paused')}")
@@ -32,9 +38,13 @@ def main() -> None:
 
         # Step 2: Customer sends another message while paused
         print("\n2️⃣ [Cliente insiste]: 'Tem alguém aí para me atender?'")
-        r2 = client.post("/chat", json={"session_id": session_id, "message": "Tem alguém aí para me atender?"})
+        r2 = client.post(
+            "/chat", json={"session_id": session_id, "message": "Tem alguém aí para me atender?"}
+        )
         data2 = r2.json()
-        print(f"   🤫 Resposta do Bot: '{data2.get('response')}' (Vazio! O bot respeita o silêncio)")
+        print(
+            f"   🤫 Resposta do Bot: '{data2.get('response')}' (Vazio! O bot respeita o silêncio)"
+        )
         print(f"   ⏸️ Bot Pausado: {data2.get('paused')}")
         assert data2.get("paused") is True, "Bot deveria estar pausado!"
 
@@ -47,7 +57,7 @@ def main() -> None:
             sys.exit(1)
         ticket = matching[0]
         tid = ticket["id"]
-        print(f"   🎫 Ticket encontrado: ID={tid} | Status={ticket['status']} | Motivo={ticket['reason']}")
+        print(f"   🎫 Ticket: ID={tid} | Status={ticket['status']} | Motivo={ticket['reason']}")
         print(f"   📝 Mensagens gravadas: {len(ticket['messages'])} mensagens")
 
         # Step 4: Claim ticket
@@ -56,10 +66,13 @@ def main() -> None:
         print(f"   👤 Novo status: {claimed['status']} | Responsável: {claimed['assignee']}")
 
         # Step 5: Operator replies to customer
-        print(f"\n5️⃣ [Operador Humano]: Envia resposta ao cliente através da API...")
+        print("\n5️⃣ [Operador Humano]: Envia resposta ao cliente através da API...")
         reply_res = client.post(
             f"/handoff/tickets/{tid}/reply",
-            json={"text": "Olá! Sou o Caio do suporte. Já estornei o valor para você!", "assignee": "Caio"},
+            json={
+                "text": "Olá! Sou o Caio do suporte. Já estornei o valor para você!",
+                "assignee": "Caio",
+            },
         ).json()
         print(f"   📤 Mensagem enviada para o canal: entregue={reply_res.get('delivered')}")
 

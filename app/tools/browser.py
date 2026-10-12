@@ -17,7 +17,7 @@ class PlaywrightBrowserTool(BaseTool):
     name = "playwright_browser"
     description = (
         "Interact with web pages using a headless browser (Playwright). "
-        "Supports JavaScript-rendered sites, clicking buttons, filling form inputs, and extracting text."
+        "Supports JavaScript-rendered sites, clicking buttons, filling forms, and extracting text."
     )
     parameters = {
         "type": "object",
@@ -121,4 +121,6 @@ class PlaywrightBrowserTool(BaseTool):
                     resp = await client.get(url)
                     return html_to_text(resp.text)[:MAX_CHARS]
             except Exception as http_exc:
-                return f"error: headless browser failed ({exc}) and HTTP fallback failed ({http_exc})"
+                return (
+                    f"error: headless browser failed ({exc}) and HTTP fallback failed ({http_exc})"
+                )

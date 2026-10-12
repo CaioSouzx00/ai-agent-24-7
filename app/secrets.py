@@ -58,6 +58,8 @@ def validate_production_settings(settings: Settings) -> list[str]:
         issues.append("WARNING: NIM_API_KEY is using a development placeholder")
 
     if "agent:agent" in settings.database_url:
-        issues.append("WARNING: DATABASE_URL is using the default development credentials (agent:agent)")
+        issues.append(
+            "WARNING: DATABASE_URL is using the default development credentials (agent:agent)"
+        )
 
     return issues

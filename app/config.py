@@ -38,6 +38,8 @@ class Settings(BaseSettings):
     stt_model: str = "whisper-1"  # Whisper or NVIDIA STT model
     tts_model: str = "tts-1"  # Text-to-speech model
     tts_voice: str = "alloy"  # Default voice for audio output
+    rate_limit_per_minute: int = 60  # Max requests per minute per user/session/key
+    rate_limit_enabled: bool = True  # Enable/disable rate limiting
 
 
 @lru_cache

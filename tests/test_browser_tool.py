@@ -1,7 +1,5 @@
 """Unit tests for PlaywrightBrowserTool (Task 5)."""
 
-import pytest
-
 from app.tools.browser import PlaywrightBrowserTool
 
 

@@ -1,7 +1,5 @@
 """Unit tests for production secrets and deployment validation (Task 7)."""
 
-import pytest
-
 from app.config import get_settings
 from app.secrets import get_secret, validate_production_settings
 
@@ -35,7 +33,9 @@ def test_validate_production_insecure_defaults(monkeypatch):
     issues = validate_production_settings(s)
     assert any("CRITICAL: Production environment requires API_KEYS" in i for i in issues)
     assert any("WARNING: NIM_API_KEY is using a development placeholder" in i for i in issues)
-    assert any("WARNING: DATABASE_URL is using the default development credentials" in i for i in issues)
+    assert any(
+        "WARNING: DATABASE_URL is using the default development credentials" in i for i in issues
+    )
 
 
 def test_validate_production_clean(monkeypatch):
@@ -43,7 +43,9 @@ def test_validate_production_clean(monkeypatch):
     monkeypatch.setattr(s, "app_env", "prod")
     monkeypatch.setattr(s, "api_keys", "strong-prod-api-key")
     monkeypatch.setattr(s, "nim_api_key", "nvapi-real-key")
-    monkeypatch.setattr(s, "database_url", "postgresql://prod_user:strong_pass@db.internal:5432/agent")
+    monkeypatch.setattr(
+        s, "database_url", "postgresql://prod_user:strong_pass@db.internal:5432/agent"
+    )
 
     issues = validate_production_settings(s)
     assert issues == []

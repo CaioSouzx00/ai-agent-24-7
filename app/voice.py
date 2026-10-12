@@ -51,9 +51,7 @@ class SpeechToText:
                     f"{base_url}/audio/transcriptions", headers=headers, files=files, data=data
                 )
             if not resp.is_success:
-                raise RuntimeError(
-                    f"STT API returned status {resp.status_code}: {resp.text[:200]}"
-                )
+                raise RuntimeError(f"STT API returned status {resp.status_code}: {resp.text[:200]}")
             return resp.json().get("text", "").strip()
         except Exception as exc:
             log.exception("STT transcription failed: %s", exc)
@@ -96,13 +94,9 @@ class TextToSpeech:
 
         try:
             async with httpx.AsyncClient(timeout=60.0, transport=self._transport) as client:
-                resp = await client.post(
-                    f"{base_url}/audio/speech", headers=headers, json=payload
-                )
+                resp = await client.post(f"{base_url}/audio/speech", headers=headers, json=payload)
             if not resp.is_success:
-                raise RuntimeError(
-                    f"TTS API returned status {resp.status_code}: {resp.text[:200]}"
-                )
+                raise RuntimeError(f"TTS API returned status {resp.status_code}: {resp.text[:200]}")
             return resp.content
         except Exception as exc:
             log.exception("TTS synthesis failed: %s", exc)

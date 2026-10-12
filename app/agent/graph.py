@@ -10,6 +10,7 @@ from typing import Any, TypedDict
 from langgraph.graph import END, StateGraph
 
 from app.agent.handoff import needs_handoff
+from app.i18n import LANGUAGE_NAMES, detect_language, get_localized_message
 from app.llm.base import LLMProvider, ToolCall
 from app.memory import LongTermMemory, SessionBackend
 from app.tickets import InMemoryTicketStore, Ticket
@@ -34,6 +35,7 @@ class AgentState(TypedDict, total=False):
     paused: bool
     channel: str
     meta: dict[str, Any]
+    lang: str
 
 
 def build_graph(
@@ -74,7 +76,12 @@ def build_graph(
             return {"memories": []}
 
     async def prepare(state: AgentState) -> AgentState:
-        system = "You are a helpful assistant."
+        lang = state.get("lang") or detect_language(state["user_input"])
+        lang_name = LANGUAGE_NAMES.get(lang, "English")
+        system = (
+            f"You are a helpful assistant. Always respond in {lang_name} ({lang}), "
+            "matching the user's language consistently."
+        )
         if state.get("memories"):
             system += "\nRelevant past context:\n" + "\n".join(state["memories"])
         history = await session_store.get(state["session_id"]) if session_store else []
@@ -83,7 +90,7 @@ def build_graph(
             *history,
             {"role": "user", "content": state["user_input"]},
         ]
-        return {"messages": msgs, "rounds": 0}
+        return {"messages": msgs, "rounds": 0, "lang": lang}
 
     async def think(state: AgentState) -> AgentState:
         rounds = state["rounds"]
@@ -141,7 +148,8 @@ def build_graph(
             )
             if notifier:
                 await notifier(ticket)
-        return {"response": "I have forwarded your request to a human agent."}
+        lang = state.get("lang") or detect_language(text)
+        return {"response": get_localized_message("handoff", lang)}
 
     async def save_turn(state: AgentState) -> AgentState:
         sid, text = state["session_id"], state["user_input"]

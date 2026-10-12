@@ -3,7 +3,6 @@
 import json
 
 import httpx
-import pytest
 
 from app.voice import SpeechToText, TextToSpeech, VoicePipeline
 
@@ -39,8 +38,12 @@ async def test_voice_pipeline_end_to_end():
     def tts_handler(request: httpx.Request):
         return httpx.Response(200, content=b"paris-audio-bytes")
 
-    stt = SpeechToText(base_url="https://api.test/v1", api_key="test", transport=httpx.MockTransport(stt_handler))
-    tts = TextToSpeech(base_url="https://api.test/v1", api_key="test", transport=httpx.MockTransport(tts_handler))
+    stt = SpeechToText(
+        base_url="https://api.test/v1", api_key="test", transport=httpx.MockTransport(stt_handler)
+    )
+    tts = TextToSpeech(
+        base_url="https://api.test/v1", api_key="test", transport=httpx.MockTransport(tts_handler)
+    )
     pipeline = VoicePipeline(stt=stt, tts=tts)
 
     async def mock_runner(session_id, user_input, channel):

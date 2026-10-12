@@ -5,8 +5,10 @@ from __future__ import annotations
 import hmac
 import json
 import logging
+import time
 from collections.abc import Awaitable, Callable
 from contextlib import asynccontextmanager
+from typing import Any
 
 from fastapi import (
     BackgroundTasks,
@@ -21,18 +23,22 @@ from fastapi import (
     WebSocket,
     WebSocketDisconnect,
 )
-from fastapi.responses import JSONResponse, PlainTextResponse
-from prometheus_client import CONTENT_TYPE_LATEST, REGISTRY, Counter, generate_latest
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from pydantic import BaseModel
 
 from app.agent.graph import build_graph
 from app.channels import get_senders
 from app.config import get_settings
+from app.dashboard import get_dashboard_html
 from app.handoff_api import api as handoff_api
 from app.handoff_api import public as handoff_public
 from app.health import readiness
+from app.i18n import detect_language, get_localized_message
 from app.llm import get_llm
 from app.memory import InMemorySessionStore, LongTermMemory, SessionStore
+from app.metrics import REQUEST_LATENCY, REQUESTS
+from app.ratelimit import check_rate_limit, limiter
 from app.security import (
     require_api_key,
     verify_meta_signature,
@@ -42,19 +48,24 @@ from app.security import (
 from app.tickets import InMemoryTicketStore, RedisTicketStore, notify_humans
 from app.tools import integrations  # noqa: F401  (registers tools)
 from app.tools.base import registry
+from app.tools.dynamic import list_dynamic_tools, unregister_dynamic_tool
 from app.voice import VoicePipeline
 
 log = logging.getLogger(__name__)
-
-if "agent_requests_total" in REGISTRY._names_to_collectors:
-    REQUESTS = REGISTRY._names_to_collectors["agent_requests_total"]
-else:
-    REQUESTS = Counter("agent_requests_total", "Total messages processed", ["channel"])
 
 
 class ChatIn(BaseModel):
     session_id: str
     message: str
+
+
+class CreateDynamicToolIn(BaseModel):
+    name: str
+    description: str
+    url: str
+    method: str = "GET"
+    parameters: dict[str, Any] | None = None
+    headers: dict[str, str] | None = None
 
 
 @asynccontextmanager
@@ -101,20 +112,24 @@ app.include_router(handoff_api)
 
 
 async def _run(session_id: str, message: str, channel: str, meta: dict | None = None) -> dict:
-    REQUESTS.labels(channel).inc()
-    out = await app.state.graph.ainvoke(
-        {
-            "session_id": session_id,
-            "user_input": message,
-            "channel": channel,
-            "meta": meta or {},
+    REQUESTS.labels(channel=channel).inc()
+    t0 = time.monotonic()
+    try:
+        out = await app.state.graph.ainvoke(
+            {
+                "session_id": session_id,
+                "user_input": message,
+                "channel": channel,
+                "meta": meta or {},
+            }
+        )
+        return {
+            "response": out.get("response", ""),
+            "handoff": out.get("handoff", False),
+            "paused": out.get("paused", False),
         }
-    )
-    return {
-        "response": out.get("response", ""),
-        "handoff": out.get("handoff", False),
-        "paused": out.get("paused", False),
-    }
+    finally:
+        REQUEST_LATENCY.labels(channel=channel).observe(time.monotonic() - t0)
 
 
 def _senders():
@@ -133,7 +148,8 @@ async def _reply(
         result = await _run(session_id, text, channel, meta)
     except Exception:  # noqa: BLE001
         log.exception("agent failed for %s session %s", channel, session_id)
-        result = {"response": "Sorry, something went wrong while processing your message."}
+        lang = detect_language(text)
+        result = {"response": get_localized_message("error", lang)}
     if result.get("paused"):
         return  # a human owns this conversation; the bot stays silent
     try:
@@ -165,17 +181,52 @@ async def metrics():
     return PlainTextResponse(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
+@app.get("/dashboard", response_class=HTMLResponse)
+async def dashboard():
+    return get_dashboard_html()
+
+
 @app.get("/tools")
 async def tools_docs():
     return PlainTextResponse(registry.docs())
 
 
-@app.post("/chat", dependencies=[Depends(require_api_key)])
+@app.get("/tools/dynamic", dependencies=[Depends(require_api_key)])
+async def get_dynamic_tools():
+    return list_dynamic_tools()
+
+
+@app.post("/tools/dynamic", dependencies=[Depends(require_api_key)])
+async def create_dynamic_tool_endpoint(body: CreateDynamicToolIn):
+    tool = registry.get("create_tool")
+    if not tool:
+        raise HTTPException(500, "create_tool not found in registry")
+    result = await tool.run(
+        name=body.name,
+        description=body.description,
+        url=body.url,
+        method=body.method,
+        parameters=body.parameters,
+        headers=body.headers,
+    )
+    if result.startswith("error:"):
+        raise HTTPException(400, result)
+    return {"message": result, "tool": body.name}
+
+
+@app.delete("/tools/dynamic/{name}", dependencies=[Depends(require_api_key)])
+async def delete_dynamic_tool_endpoint(name: str):
+    if not unregister_dynamic_tool(name):
+        raise HTTPException(404, f"Dynamic tool '{name}' not found")
+    return {"ok": True}
+
+
+@app.post("/chat", dependencies=[Depends(require_api_key), Depends(check_rate_limit)])
 async def chat(body: ChatIn):
     return await _run(body.session_id, body.message, "rest")
 
 
-@app.post("/voice/chat", dependencies=[Depends(require_api_key)])
+@app.post("/voice/chat", dependencies=[Depends(require_api_key), Depends(check_rate_limit)])
 async def voice_chat(
     file: UploadFile = File(...),  # noqa: B008
     session_id: str = Form(...),  # noqa: B008
@@ -196,6 +247,14 @@ async def ws_chat(ws: WebSocket, session_id: str):
     try:
         while True:
             text = await ws.receive_text()
+            res = await limiter.is_allowed(
+                f"ws:{session_id}",
+                limit=get_settings().rate_limit_per_minute,
+                window_seconds=60,
+            )
+            if not res.allowed:
+                await ws.send_json({"error": "rate_limited", "retry_after": res.retry_after})
+                continue
             await ws.send_json(await _run(session_id, text, "ws"))
     except WebSocketDisconnect:
         pass
