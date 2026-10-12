@@ -60,5 +60,9 @@ class NIMProvider(LLMProvider):
         data = sorted(resp.json()["data"], key=lambda d: d.get("index", 0))
         return [d["embedding"] for d in data]
 
+    async def health(self) -> bool:
+        resp = await self._client.get("/models", timeout=3.0)
+        return resp.is_success
+
     async def aclose(self) -> None:
         await self._client.aclose()

@@ -33,3 +33,7 @@ class LLMProvider(ABC):
     async def embed(self, texts: list[str]) -> list[list[float]]:
         """Return one embedding vector per input text."""
         raise NotImplementedError(f"{type(self).__name__} does not support embeddings")
+
+    async def health(self) -> bool:
+        """Return True if the backend is reachable and able to serve requests."""
+        return True

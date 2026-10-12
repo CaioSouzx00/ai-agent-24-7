@@ -53,6 +53,11 @@ services:
       NIM_BASE_URL: http://nim:8000/v1
     ports: ["8080:8080"]
     depends_on: [redis, postgres]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://localhost:8080/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
 
 volumes:
   nim-cache:
