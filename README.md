@@ -286,10 +286,10 @@ O modelo de IA tem acesso a um catálogo padronizado de ferramentas registradas 
 | 🌐 **Navegação Web** | `web_browse` | Baixa páginas web públicas (HTML) e extrai o texto legível com proteção contra SSRF e limites de caracteres. |
 | 🔍 **Busca na Web** | `web_search` | Realiza buscas em tempo real no DuckDuckGo e retorna os links e títulos mais relevantes. |
 | 💬 **Envio no Slack** | `slack_send_message` | Posta mensagens em canais ou conversas do Slack através da API oficial. |
-| 📧 *Gmail (Stub)* | `gmail` | Leitura e envio de e-mails via OAuth *(pronto para plugar)*. |
-| 📅 *Google Agenda (Stub)* | `google_calendar` | Consulta e agendamento de eventos *(pronto para plugar)*. |
-| 🐙 *GitHub (Stub)* | `github` | Criação e consulta de Issues/PRs *(pronto para plugar)*. |
-| 👁️ *Visão Computacional (Stub)* | `image_analysis` | Análise multimodal de imagens *(pronto para plugar)*. |
+| 📧 **Gmail** | `gmail` | Leitura, busca e envio de e-mails via API do Gmail. |
+| 📅 **Google Agenda** | `google_calendar` | Listagem e criação de eventos na agenda via API do Google Calendar. |
+| 🐙 **GitHub** | `github` | Criação, consulta e listagem de Issues e dados de repositórios no GitHub. |
+| 👁️ **Visão Computacional** | `image_analysis` | Análise multimodal de imagens via LLM (NVIDIA/OpenAI format). |
 
 ---
 
@@ -387,7 +387,7 @@ NIM_API_KEY=sua-chave-gerada-no-build-nvidia
 
 ## 🧪 Testes e Validação
 
-O projeto possui uma suíte abrangente de **71 testes automatizados** cobrindo canais, segurança, memória, transbordo e ciclo de ferramentas:
+O projeto possui uma suíte abrangente de **92 testes automatizados** cobrindo canais, segurança (JWT/HMAC), memória, transbordo e ciclo de ferramentas (Web, Slack, GitHub, Gmail, Agenda e Visão):
 
 ```bash
 # Executar todos os testes com pytest
@@ -488,7 +488,7 @@ Consulte o arquivo [`docs/ROADMAP.md`](docs/ROADMAP.md) para detalhes completos 
 - [x] **Fase 4:** Webhooks seguros com verificação HMAC para Slack e WhatsApp Cloud API.
 - [x] **Fase 5:** Monitoramento (Prometheus `/metrics`), diagnósticos `/ready` e resiliência com fallback.
 - [x] **Fase 6:** Transbordo humano completo com fila de tickets e Console Web interativo.
-- [ ] **Fase 7:** Implementação das ferramentas de Gmail, Google Agenda e GitHub.
+- [x] **Fase 7:** Implementação das ferramentas de Gmail, Google Agenda, GitHub e Visão Multimodal.
 - [ ] **Fase 8:** Workflows avançados de longa duração com Temporal.
 
 ---

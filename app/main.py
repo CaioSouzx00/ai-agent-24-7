@@ -141,7 +141,9 @@ async def health():
 
 @app.get("/ready")
 async def ready():
-    code, body = await readiness(app.state.llm, app.state.sessions, app.state.memory)
+    code, body = await readiness(
+        app.state.llm, app.state.sessions, app.state.memory, app.state.tickets
+    )
     return JSONResponse(body, status_code=code)
 
 

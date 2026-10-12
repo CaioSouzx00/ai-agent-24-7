@@ -37,6 +37,8 @@ class Ticket:
 
 
 class InMemoryTicketStore:
+    backend_name = "in-memory"
+
     def __init__(self) -> None:
         self._tickets: dict[str, Ticket] = {}
 
@@ -90,11 +92,18 @@ class InMemoryTicketStore:
 class RedisTicketStore(InMemoryTicketStore):
     """Same behaviour, persisted in Redis (tickets survive restarts / multiple instances)."""
 
+    backend_name = "redis"
     TTL = 30 * 86400
 
     def __init__(self, client) -> None:
         super().__init__()
         self._r = client
+
+    async def ping(self) -> bool:
+        try:
+            return bool(await self._r.ping())
+        except Exception:
+            return False
 
     @staticmethod
     def _load(raw) -> Ticket:

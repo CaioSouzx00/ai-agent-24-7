@@ -20,7 +20,7 @@ async def _check(fn) -> str:
         return "down"
 
 
-async def readiness(llm, sessions, memory) -> tuple[int, dict[str, Any]]:
+async def readiness(llm, sessions, memory, tickets=None) -> tuple[int, dict[str, Any]]:
     components: dict[str, str] = {}
     tasks: dict[str, Any] = {"llm": _check(llm.health)}
     if hasattr(sessions, "ping"):
@@ -35,9 +35,14 @@ async def readiness(llm, sessions, memory) -> tuple[int, dict[str, Any]]:
     results = await asyncio.gather(*tasks.values())
     components.update(dict(zip(tasks.keys(), results, strict=True)))
 
+    if tickets is not None:
+        components["tickets"] = getattr(tickets, "backend_name", "in-memory")
+
     if components["llm"] != "ok":
         return 503, {"status": "not_ready", "components": components}
     degraded = any(
-        v == "down" or v.startswith(("fallback", "disabled")) for v in components.values()
+        v == "down" or v.startswith(("fallback", "disabled"))
+        for k, v in components.items()
+        if k != "tickets"
     )
     return 200, {"status": "degraded" if degraded else "ready", "components": components}

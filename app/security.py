@@ -1,18 +1,26 @@
-"""Channel security (Task 4.x): webhook signature checks and API-key auth.
+"""Channel and API security (Tasks 4.1-4.5): webhook signatures, API keys, and JWT auth.
 
-Everything fails closed: a missing secret rejects the request, except API keys in
-`APP_ENV=dev` (so local development works out of the box).
+Supports:
+- Webhook HMAC SHA-256 signatures for Slack (with replay protection) and WhatsApp (Meta).
+- Static API keys via header `Authorization: Bearer <key>` or `X-API-Key: <key>`.
+- JWT authentication for user tokens (Auth0, Clerk, Firebase, or custom tokens).
+- Fails closed in production; allows unauthenticated access in dev when no auth configured.
 """
 
 from __future__ import annotations
 
 import hashlib
 import hmac
+import logging
 import time
+from typing import Any
 
+import jwt
 from fastapi import HTTPException, Request, WebSocket
 
 from app.config import Settings, get_settings
+
+log = logging.getLogger(__name__)
 
 SLACK_MAX_AGE_SECONDS = 300
 
@@ -45,6 +53,49 @@ def verify_meta_signature(secret: str, signature: str | None, body: bytes) -> bo
     return _eq(expected, signature)
 
 
+def is_jwt(token: str) -> bool:
+    """Returns True if the token has the standard JWT 3-part structure."""
+    parts = token.split(".")
+    return len(parts) == 3
+
+
+def verify_jwt(token: str, settings: Settings) -> dict[str, Any]:
+    """Verify and decode a JWT token using HS256 secret, RS256 JWKS, or dev fallback."""
+    options = {}
+    if not settings.jwt_audience:
+        options["verify_aud"] = False
+
+    kwargs: dict[str, Any] = {"options": options}
+    if settings.jwt_audience:
+        kwargs["audience"] = settings.jwt_audience
+    if settings.jwt_issuer:
+        kwargs["issuer"] = settings.jwt_issuer
+
+    if settings.jwt_secret:
+        return jwt.decode(
+            token,
+            settings.jwt_secret,
+            algorithms=["HS256", "HS384", "HS512"],
+            **kwargs,
+        )
+
+    if settings.jwt_jwks_url:
+        jwks_client = jwt.PyJWKClient(settings.jwt_jwks_url)
+        signing_key = jwks_client.get_signing_key_from_jwt(token)
+        return jwt.decode(
+            token,
+            signing_key.key,
+            algorithms=["RS256", "RS384", "RS512", "ES256"],
+            **kwargs,
+        )
+
+    # In dev mode with no JWT verification configured, parse payload without signature check
+    if settings.app_env == "dev":
+        return jwt.decode(token, options={"verify_signature": False})
+
+    raise jwt.InvalidTokenError("JWT validation configured but secret/JWKS missing")
+
+
 def api_key_allowed(settings: Settings, presented: str | None) -> bool:
     keys = [k.strip() for k in settings.api_keys.split(",") if k.strip()]
     if not keys:
@@ -52,22 +103,74 @@ def api_key_allowed(settings: Settings, presented: str | None) -> bool:
     return bool(presented) and any(_eq(k, presented) for k in keys)
 
 
-def _extract_key(authorization: str | None, x_api_key: str | None) -> str | None:
+def _extract_token(authorization: str | None, x_api_key: str | None) -> str | None:
     if x_api_key:
-        return x_api_key
+        return x_api_key.strip()
     if authorization and authorization.lower().startswith("bearer "):
         return authorization[7:].strip()
     return None
 
 
-async def require_api_key(request: Request) -> None:
-    key = _extract_key(request.headers.get("authorization"), request.headers.get("x-api-key"))
-    if not api_key_allowed(get_settings(), key):
-        raise HTTPException(401, "invalid or missing API key")
+async def require_auth(request: Request) -> dict[str, Any]:
+    """Authenticates request via JWT or API Key, storing user in request.state.user."""
+    token = _extract_token(request.headers.get("authorization"), request.headers.get("x-api-key"))
+    settings = get_settings()
+
+    # 1. Dev mode with no credentials configured -> open access
+    has_jwt_config = bool(settings.jwt_secret or settings.jwt_jwks_url)
+    has_key_config = bool([k.strip() for k in settings.api_keys.split(",") if k.strip()])
+    if not has_jwt_config and not has_key_config and settings.app_env == "dev":
+        user = {"sub": "dev_user", "role": "dev"}
+        request.state.user = user
+        return user
+
+    if not token:
+        raise HTTPException(401, "invalid or missing authentication credential")
+
+    # 2. Try JWT if token has 3 parts
+    if is_jwt(token):
+        try:
+            payload = verify_jwt(token, settings)
+            request.state.user = payload
+            return payload
+        except jwt.ExpiredSignatureError:
+            raise HTTPException(401, "JWT token has expired") from None
+        except jwt.PyJWTError as exc:
+            log.warning("JWT validation failed: %s", exc)
+            raise HTTPException(401, f"invalid JWT token: {exc}") from exc
+
+    # 3. Fallback to API Key
+    if api_key_allowed(settings, token):
+        user = {"sub": "api_key_user", "key": token[:6] + "..."}
+        request.state.user = user
+        return user
+
+    raise HTTPException(401, "invalid API key or JWT token")
+
+
+# Backward compatibility alias
+require_api_key = require_auth
 
 
 def websocket_authorized(ws: WebSocket) -> bool:
-    key = _extract_key(
+    token = _extract_token(
         ws.headers.get("authorization"), ws.headers.get("x-api-key")
     ) or ws.query_params.get("api_key")
-    return api_key_allowed(get_settings(), key)
+    settings = get_settings()
+
+    has_jwt_config = bool(settings.jwt_secret or settings.jwt_jwks_url)
+    has_key_config = bool([k.strip() for k in settings.api_keys.split(",") if k.strip()])
+    if not has_jwt_config and not has_key_config and settings.app_env == "dev":
+        return True
+
+    if not token:
+        return False
+
+    if is_jwt(token):
+        try:
+            verify_jwt(token, settings)
+            return True
+        except jwt.PyJWTError:
+            return False
+
+    return api_key_allowed(settings, token)
