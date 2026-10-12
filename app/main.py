@@ -5,14 +5,26 @@ from __future__ import annotations
 import hmac
 import json
 import logging
+from collections.abc import Awaitable, Callable
 from contextlib import asynccontextmanager
+from dataclasses import dataclass
 
-from fastapi import Depends, FastAPI, HTTPException, Query, Request, WebSocket, WebSocketDisconnect
+from fastapi import (
+    BackgroundTasks,
+    Depends,
+    FastAPI,
+    HTTPException,
+    Query,
+    Request,
+    WebSocket,
+    WebSocketDisconnect,
+)
 from fastapi.responses import JSONResponse, PlainTextResponse
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, generate_latest
 from pydantic import BaseModel
 
 from app.agent.graph import build_graph
+from app.channels import send_slack, send_whatsapp
 from app.config import get_settings
 from app.health import readiness
 from app.llm import get_llm
@@ -72,6 +84,31 @@ async def _run(session_id: str, message: str, channel: str) -> dict:
     return {"response": out.get("response", ""), "handoff": out.get("handoff", False)}
 
 
+@dataclass
+class Senders:
+    slack: Callable[[str, str], Awaitable[None]] = send_slack
+    whatsapp: Callable[[str, str, str], Awaitable[None]] = send_whatsapp
+
+
+def _senders() -> Senders:
+    return getattr(app.state, "senders", None) or Senders()
+
+
+async def _reply(
+    channel: str, session_id: str, text: str, send: Callable[[str], Awaitable[None]]
+) -> None:
+    """Run the agent and deliver the answer to the originating channel (background task)."""
+    try:
+        answer = (await _run(session_id, text, channel))["response"]
+    except Exception:  # noqa: BLE001
+        log.exception("agent failed for %s session %s", channel, session_id)
+        answer = "Sorry, something went wrong while processing your message."
+    try:
+        await send(answer or "(no response)")
+    except Exception:  # noqa: BLE001
+        log.exception("failed to deliver %s reply for session %s", channel, session_id)
+
+
 @app.get("/health")
 async def health():
     return {"status": "ok"}
@@ -113,7 +150,7 @@ async def ws_chat(ws: WebSocket, session_id: str):
 
 
 @app.post("/webhooks/slack")
-async def slack_webhook(request: Request):
+async def slack_webhook(request: Request, background: BackgroundTasks):
     body = await request.body()
     secret = get_settings().slack_signing_secret
     if not secret:
@@ -131,8 +168,11 @@ async def slack_webhook(request: Request):
     if payload.get("type") == "url_verification":
         return {"challenge": payload["challenge"]}
     event = payload.get("event", {})
-    if event.get("type") == "message" and not event.get("bot_id"):
-        return await _run(event.get("channel", "slack"), event.get("text", ""), "slack")
+    if event.get("type") == "message" and not event.get("bot_id") and event.get("text"):
+        channel = event.get("channel", "slack")
+        background.add_task(
+            _reply, "slack", channel, event["text"], lambda t: _senders().slack(channel, t)
+        )
     return {"ok": True}
 
 
@@ -149,7 +189,7 @@ async def whatsapp_verify(
 
 
 @app.post("/webhooks/whatsapp")
-async def whatsapp_webhook(request: Request):
+async def whatsapp_webhook(request: Request, background: BackgroundTasks):
     body = await request.body()
     secret = get_settings().whatsapp_app_secret
     if not secret:
@@ -158,7 +198,14 @@ async def whatsapp_webhook(request: Request):
         raise HTTPException(401, "invalid WhatsApp signature")
     data = json.loads(body)
     try:
-        msg = data["entry"][0]["changes"][0]["value"]["messages"][0]
-        return await _run(msg["from"], msg["text"]["body"], "whatsapp")
+        value = data["entry"][0]["changes"][0]["value"]
+        msg = value["messages"][0]
+        text = msg["text"]["body"]
+        phone_id = value["metadata"]["phone_number_id"]
     except (KeyError, IndexError):
-        return {"ok": True}
+        return {"ok": True}  # statuses, media, etc.
+    sender = msg["from"]
+    background.add_task(
+        _reply, "whatsapp", sender, text, lambda t: _senders().whatsapp(sender, t, phone_id)
+    )
+    return {"ok": True}
