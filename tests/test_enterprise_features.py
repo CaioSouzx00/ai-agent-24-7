@@ -29,12 +29,15 @@ def _clear_settings():
 # 1. GMAIL CLOUD PUB/SUB TESTS
 # ============================================================================
 
+
 @pytest.mark.asyncio
 async def test_gmail_pubsub_unauthorized_when_token_configured(monkeypatch):
     monkeypatch.setenv("GMAIL_PUBSUB_VERIFICATION_TOKEN", "super-secret-token")
     get_settings.cache_clear()
 
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app), base_url="http://test"
+    ) as client:
         # Sem token
         resp = await client.post("/webhooks/gmail", json={"message": {"data": ""}})
         assert resp.status_code == 403
@@ -54,12 +57,14 @@ async def test_gmail_pubsub_authorized_via_query_and_bearer(monkeypatch):
     get_settings.cache_clear()
 
     # Mensagem codificada em base64 seguindo estrutura oficial de notificacoes Pub/Sub do Gmail
-    payload_data = json.dumps({
-        "emailAddress": "client@example.com",
-        "historyId": "987654",
-        "snippet": "Need urgent technical assistance",
-        "from": "client@example.com",
-    }).encode("utf-8")
+    payload_data = json.dumps(
+        {
+            "emailAddress": "client@example.com",
+            "historyId": "987654",
+            "snippet": "Need urgent technical assistance",
+            "from": "client@example.com",
+        }
+    ).encode("utf-8")
     b64_data = base64.b64encode(payload_data).decode("utf-8")
 
     body = {
@@ -69,7 +74,9 @@ async def test_gmail_pubsub_authorized_via_query_and_bearer(monkeypatch):
         }
     }
 
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app), base_url="http://test"
+    ) as client:
         with patch("app.main._reply", new_callable=AsyncMock) as mock_reply:
             # Via query param ?token=
             resp = await client.post("/webhooks/gmail?token=pubsub-secret", json=body)
@@ -91,7 +98,9 @@ async def test_gmail_pubsub_authorized_via_query_and_bearer(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_gmail_pubsub_invalid_body_or_data():
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app), base_url="http://test"
+    ) as client:
         # Invalid JSON body
         resp = await client.post(
             "/webhooks/gmail",
@@ -131,6 +140,7 @@ async def test_send_gmail_channel():
 # ============================================================================
 # 2. MULTI-TENANCY TESTS
 # ============================================================================
+
 
 @pytest.mark.asyncio
 async def test_in_memory_session_store_tenant_isolation():
@@ -248,7 +258,9 @@ async def test_handoff_api_tenant_filtering(monkeypatch):
     )
 
     headers = {"X-API-Key": "test-key"}
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app), base_url="http://test"
+    ) as client:
         # Filtro via query parameter ?tenant_id=alpha
         resp = await client.get("/handoff/tickets?tenant_id=alpha", headers=headers)
         assert resp.status_code == 200
@@ -268,6 +280,7 @@ async def test_handoff_api_tenant_filtering(monkeypatch):
 # ============================================================================
 # 3. BUSINESS METRICS TESTS
 # ============================================================================
+
 
 def test_business_metrics_tracker_logic():
     tracker = BusinessMetricsTracker()
@@ -305,7 +318,9 @@ async def test_get_business_metrics_endpoint():
     BUSINESS_TRACKER.record_tool("mock_tool", 0.05, success=True)
     BUSINESS_TRACKER.record_handoff("web", "corp_test")
 
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app), base_url="http://test"
+    ) as client:
         resp = await client.get("/metrics/business")
         assert resp.status_code == 200
         data = resp.json()

@@ -16,6 +16,19 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ---
 
+## [0.3.0] - 2026-10-13
+
+### Added
+- **Single Page Application em React:** Interface web moderna desenvolvida com React 19, TypeScript, Tailwind CSS, Radix UI e TanStack Router em `web/`, estruturada sob arquitetura feature-based (`dashboard`, `handoff`, `chat`, `tools`).
+- **Webhook Gmail Cloud Pub/Sub:** Ingress em `POST /webhooks/gmail` para notificações push do Google Cloud Pub/Sub com autenticação via token Bearer/query parameter, decodificação base64 e réplica assíncrona por email.
+- **Isolamento Multi-Tenancy Leve:** Suporte a `tenant_id` em toda a plataforma, garantindo isolamento de contexto de histórico em Redis, persistência semântica no PostgreSQL (`pgvector`) e filas de tickets de transbordo.
+- **Telemetria e Métricas de Negócio:** Endpoint dedicado `GET /metrics/business`, contadores Prometheus de transbordo (`agent_handoffs_total`), histograma de latência por ferramenta (`agent_tool_duration_seconds`) e agregador analítico em memória com janela deslizante.
+- **Coleções de API e Exemplos OpenAPI:** Exportação de coleções completas em `docs/postman_collection.json` e `docs/insomnia_collection.json`, além de exemplos interativos adicionados aos esquemas do OpenAPI (`/docs`).
+- **Pipeline de Integração Contínua (CI):** Configuração de workflow no GitHub Actions (`.github/workflows/ci.yml`) validando formatação com Black/Ruff/isort, tipagem estática e execução do pytest e vitest.
+- **Orquestração e Testes de Resiliência:** Testes de integração com instâncias reais de PostgreSQL (pgvector) e Redis, além de validação ponta a ponta de workflows duráveis com Temporal.
+
+---
+
 ## [0.2.0] - 2026-10-13
 
 ### Added

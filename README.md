@@ -7,6 +7,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 [![Tests](https://img.shields.io/badge/Tests-137%20passing-brightgreen)](tests/)
+[![Coverage](https://img.shields.io/badge/Coverage-89%25-brightgreen)](tests/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 Autonomous enterprise artificial intelligence platform for conversational customer service, process orchestration, and hardened tool execution in mission-critical environments.
@@ -554,6 +555,7 @@ pre-commit run --all-files
 
 ```
 ai-agent-24-7/
+├── .github/workflows/ci.yml             # GitHub Actions CI pipeline (lint, test, build)
 ├── app/                                 # Backend application source code
 │   ├── agent/                           # Agent core logic and graph definition
 │   │   ├── graph.py                     # LangGraph state machine and routing nodes
@@ -576,7 +578,7 @@ ai-agent-24-7/
 │   │   ├── vision.py                    # Multimodal visual analysis tool
 │   │   ├── web.py                       # Search and secure web content readers
 │   │   └── integrations.py              # Tool registration and initialization
-│   ├── channels.py                      # Dispatchers for Slack and WhatsApp delivery
+│   ├── channels.py                      # Dispatchers for Slack, WhatsApp, and Gmail delivery
 │   ├── config.py                        # Pydantic settings and environment management
 │   ├── dashboard.py                     # SPA serving and fallback handler
 │   ├── handoff_api.py                   # Human handoff REST API endpoints
@@ -624,11 +626,13 @@ ai-agent-24-7/
 │
 ├── docs/                                # Technical documentation and guides
 │   ├── examples/                        # Prompts and reference implementations
-│   │   └── prompts.md                   # Curated prompt catalog for tools
 │   ├── architecture.md                  # Detailed architectural specification
-│   └── ROADMAP.md                       # Project delivery roadmap and changelog
+│   ├── RELEASE_NOTES.md                 # Version release notes and features
+│   ├── postman_collection.json          # Postman v2.1.0 API collection
+│   ├── insomnia_collection.json         # Insomnia v4 API collection
+│   └── ROADMAP.md                       # Strategic platform roadmap and milestones
 │
-├── tests/                               # Comprehensive automated test suite (127 passing)
+├── tests/                               # Comprehensive automated test suite (137 passing)
 │   ├── test_browser_tool.py             # Playwright browser unit tests
 │   ├── test_channels.py                 # Outbound channel delivery tests
 │   ├── test_conditional_tools.py        # Conditional tool registration tests
