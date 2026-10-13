@@ -40,6 +40,7 @@ class Settings(BaseSettings):
     tts_voice: str = "alloy"  # Default voice for audio output
     rate_limit_per_minute: int = 60  # Max requests per minute per user/session/key
     rate_limit_enabled: bool = True  # Enable/disable rate limiting
+    gmail_pubsub_verification_token: str = ""  # Secret token for Gmail Cloud Pub/Sub push webhook
 
 
 @lru_cache

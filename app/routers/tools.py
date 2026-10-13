@@ -6,7 +6,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import PlainTextResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.security import require_api_key
 from app.tools.base import registry
@@ -16,12 +16,36 @@ router = APIRouter(tags=["tools"])
 
 
 class CreateDynamicToolIn(BaseModel):
-    name: str
-    description: str
-    url: str
-    method: str = "GET"
-    parameters: dict[str, Any] | None = None
-    headers: dict[str, str] | None = None
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "name": "currency_rates",
+                    "description": "Fetch real-time foreign exchange currency rates",
+                    "url": "https://api.frankfurter.app/latest",
+                    "method": "GET",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "from": {"type": "string", "description": "Base currency"},
+                            "to": {"type": "string", "description": "Quote currency"},
+                        },
+                    },
+                }
+            ]
+        }
+    )
+
+    name: str = Field(..., description="Unique snake_case identifier for the dynamic tool")
+    description: str = Field(..., description="Actionable description of tool functionality")
+    url: str = Field(..., description="Target public HTTPS endpoint")
+    method: str = Field(default="GET", description="HTTP method (GET, POST, PUT, DELETE)")
+    parameters: dict[str, Any] | None = Field(
+        default=None, description="JSON Schema object describing required parameters"
+    )
+    headers: dict[str, str] | None = Field(
+        default=None, description="Static HTTP headers to send with the request"
+    )
 
 
 @router.get("/tools")

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 from collections.abc import Awaitable, Callable
 from typing import Any, TypedDict
 
@@ -13,6 +14,7 @@ from app.agent.handoff import needs_handoff
 from app.i18n import LANGUAGE_NAMES, detect_language, get_localized_message
 from app.llm.base import LLMProvider, ToolCall
 from app.memory import LongTermMemory, SessionBackend
+from app.metrics import BUSINESS_TRACKER
 from app.tickets import InMemoryTicketStore, Ticket
 from app.tools.base import ToolRegistry
 
@@ -46,8 +48,12 @@ def build_graph(
     tickets: InMemoryTicketStore | None = None,
     notifier: Callable[[Ticket], Awaitable[Any]] | None = None,
 ):
+    def _tenant(state: AgentState) -> str:
+        return (state.get("meta") or {}).get("tenant_id") or "default"
+
     async def classify_intent(state: AgentState) -> AgentState:
-        if tickets and await tickets.active_for(state["session_id"]):
+        t_id = _tenant(state)
+        if tickets and await tickets.active_for(state["session_id"], tenant_id=t_id):
             return {"intent": "paused", "paused": True, "handoff": True}
         handoff = needs_handoff(state["user_input"])
         return {
@@ -59,18 +65,26 @@ def build_graph(
     async def paused(state: AgentState) -> AgentState:
         """A human owns this conversation: record the message and stay silent."""
         sid, text = state["session_id"], state["user_input"]
-        ticket = await tickets.active_for(sid)
+        t_id = _tenant(state)
+        ticket = await tickets.active_for(sid, tenant_id=t_id)
         if ticket:
             await tickets.add_message(ticket.id, "user", text)
         if session_store:
-            await session_store.append(sid, {"role": "user", "content": text})
+            await session_store.append(sid, {"role": "user", "content": text}, tenant_id=t_id)
         return {"response": ""}
 
     async def retrieve_memory(state: AgentState) -> AgentState:
         if not memory:
             return {"memories": []}
+        t_id = _tenant(state)
         try:
-            return {"memories": await memory.search(state["session_id"], state["user_input"])}
+            try:
+                memories = await memory.search(
+                    state["session_id"], state["user_input"], tenant_id=t_id
+                )
+            except TypeError:
+                memories = await memory.search(state["session_id"], state["user_input"])
+            return {"memories": memories}
         except Exception:  # noqa: BLE001 - memory is best-effort
             log.warning("long-term memory search failed", exc_info=True)
             return {"memories": []}
@@ -84,7 +98,10 @@ def build_graph(
         )
         if state.get("memories"):
             system += "\nRelevant past context:\n" + "\n".join(state["memories"])
-        history = await session_store.get(state["session_id"]) if session_store else []
+        t_id = _tenant(state)
+        history = (
+            await session_store.get(state["session_id"], tenant_id=t_id) if session_store else []
+        )
         msgs = [
             {"role": "system", "content": system},
             *history,
@@ -121,11 +138,20 @@ def build_graph(
         )
         for c in calls:
             tool = tools.get(c.name)
+            t0 = time.perf_counter()
+            success = True
             try:
                 result = await tool.run(**c.arguments) if tool else f"error: unknown tool {c.name}"
+                if str(result).startswith("error:"):
+                    success = False
             except Exception as exc:  # noqa: BLE001
+                success = False
                 log.warning("tool %s failed", c.name, exc_info=True)
                 result = f"error: {exc}"
+            finally:
+                duration = time.perf_counter() - t0
+                BUSINESS_TRACKER.record_tool(c.name, duration, success)
+
             msgs.append(
                 {
                     "role": "tool",
@@ -137,14 +163,17 @@ def build_graph(
 
     async def handoff(state: AgentState) -> AgentState:
         sid, text = state["session_id"], state["user_input"]
+        t_id = _tenant(state)
+        BUSINESS_TRACKER.record_handoff(state.get("channel", "unknown"), t_id)
         if tickets:
-            history = await session_store.get(sid) if session_store else []
+            history = await session_store.get(sid, tenant_id=t_id) if session_store else []
             ticket = await tickets.create(
                 sid,
                 state.get("channel", "unknown"),
                 state.get("meta") or {},
                 [*history, {"role": "user", "content": text}],
                 reason="sensitive request detected",
+                tenant_id=t_id,
             )
             if notifier:
                 await notifier(ticket)
@@ -153,15 +182,20 @@ def build_graph(
 
     async def save_turn(state: AgentState) -> AgentState:
         sid, text = state["session_id"], state["user_input"]
+        t_id = _tenant(state)
         if session_store:
             await session_store.append(
                 sid,
                 {"role": "user", "content": text},
                 {"role": "assistant", "content": state.get("response", "")},
+                tenant_id=t_id,
             )
         if memory and not state.get("handoff"):
             try:
-                await memory.add(sid, text)
+                try:
+                    await memory.add(sid, text, tenant_id=t_id)
+                except TypeError:
+                    await memory.add(sid, text)
             except Exception:  # noqa: BLE001 - memory is best-effort
                 log.warning("long-term memory write failed", exc_info=True)
         return {}

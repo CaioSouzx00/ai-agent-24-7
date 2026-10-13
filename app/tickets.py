@@ -31,6 +31,7 @@ class Ticket:
     reason: str = ""
     created_at: float = field(default_factory=time.time)
     messages: list[dict[str, Any]] = field(default_factory=list)
+    tenant_id: str = "default"
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -43,9 +44,23 @@ class InMemoryTicketStore:
         self._tickets: dict[str, Ticket] = {}
 
     async def create(
-        self, session_id: str, channel: str, meta: dict, messages: list[dict], reason: str = ""
+        self,
+        session_id: str,
+        channel: str,
+        meta: dict,
+        messages: list[dict],
+        reason: str = "",
+        tenant_id: str = "default",
     ) -> Ticket:
-        t = Ticket(uuid.uuid4().hex[:8], session_id, channel, dict(meta), reason=reason)
+        resolved_tenant = meta.get("tenant_id") or tenant_id
+        t = Ticket(
+            uuid.uuid4().hex[:8],
+            session_id,
+            channel,
+            dict(meta),
+            reason=reason,
+            tenant_id=resolved_tenant,
+        )
         t.messages = [dict(m) for m in messages]
         self._tickets[t.id] = t
         return t
@@ -53,14 +68,20 @@ class InMemoryTicketStore:
     async def get(self, ticket_id: str) -> Ticket | None:
         return self._tickets.get(ticket_id)
 
-    async def list(self, status: str | None = None) -> list[Ticket]:
+    async def list(self, status: str | None = None, tenant_id: str | None = None) -> list[Ticket]:
         items = sorted(self._tickets.values(), key=lambda t: t.created_at, reverse=True)
-        return [t for t in items if status is None or t.status == status]
+        return [
+            t
+            for t in items
+            if (status is None or t.status == status)
+            and (tenant_id is None or t.tenant_id == tenant_id)
+        ]
 
-    async def active_for(self, session_id: str) -> Ticket | None:
+    async def active_for(self, session_id: str, tenant_id: str | None = None) -> Ticket | None:
         for t in self._tickets.values():
             if t.session_id == session_id and t.status in ACTIVE_STATUSES:
-                return t
+                if tenant_id is None or t.tenant_id == tenant_id:
+                    return t
         return None
 
     async def save(self, ticket: Ticket) -> None:
@@ -107,7 +128,10 @@ class RedisTicketStore(InMemoryTicketStore):
 
     @staticmethod
     def _load(raw) -> Ticket:
-        return Ticket(**json.loads(raw))
+        data = json.loads(raw)
+        if "tenant_id" not in data:
+            data["tenant_id"] = "default"
+        return Ticket(**data)
 
     async def save(self, ticket: Ticket) -> None:
         await self._r.set(f"ticket:{ticket.id}", json.dumps(ticket.to_dict()), ex=self.TTL)
@@ -118,8 +142,24 @@ class RedisTicketStore(InMemoryTicketStore):
         elif (await self._r.get(key)) in (ticket.id, ticket.id.encode()):
             await self._r.delete(key)
 
-    async def create(self, session_id, channel, meta, messages, reason="") -> Ticket:
-        t = Ticket(uuid.uuid4().hex[:8], session_id, channel, dict(meta), reason=reason)
+    async def create(
+        self,
+        session_id,
+        channel,
+        meta,
+        messages,
+        reason="",
+        tenant_id="default",
+    ) -> Ticket:
+        resolved_tenant = meta.get("tenant_id") or tenant_id
+        t = Ticket(
+            uuid.uuid4().hex[:8],
+            session_id,
+            channel,
+            dict(meta),
+            reason=reason,
+            tenant_id=resolved_tenant,
+        )
         t.messages = [dict(m) for m in messages]
         await self.save(t)
         return t
@@ -128,21 +168,28 @@ class RedisTicketStore(InMemoryTicketStore):
         raw = await self._r.get(f"ticket:{ticket_id}")
         return self._load(raw) if raw else None
 
-    async def list(self, status: str | None = None) -> list[Ticket]:
+    async def list(self, status: str | None = None, tenant_id: str | None = None) -> list[Ticket]:
         ids = await self._r.zrevrange("tickets", 0, 199)
         out = []
         for i in ids:
             t = await self.get(i.decode() if isinstance(i, bytes) else i)
-            if t and (status is None or t.status == status):
+            if (
+                t
+                and (status is None or t.status == status)
+                and (tenant_id is None or t.tenant_id == tenant_id)
+            ):
                 out.append(t)
         return out
 
-    async def active_for(self, session_id: str) -> Ticket | None:
+    async def active_for(self, session_id: str, tenant_id: str | None = None) -> Ticket | None:
         tid = await self._r.get(f"ticket_active:{session_id}")
         if not tid:
             return None
         t = await self.get(tid.decode() if isinstance(tid, bytes) else tid)
-        return t if t and t.status in ACTIVE_STATUSES else None
+        if t and t.status in ACTIVE_STATUSES:
+            if tenant_id is None or t.tenant_id == tenant_id:
+                return t
+        return None
 
 
 def format_alert(ticket: Ticket, public_url: str = "") -> str:
