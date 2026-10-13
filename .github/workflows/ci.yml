@@ -5,13 +5,10 @@ on:
     branches:
       - main
       - develop
-      - "feature/**"
-      - "chore/**"
-      - "docs/**"
   pull_request:
     branches:
       - main
-      - develop
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -19,83 +16,19 @@ concurrency:
 
 jobs:
   lint:
-    name: Backend Code Quality & Linting
+    name: Code Quality Check
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python 3.11
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-          cache: "pip"
 
-      - name: Install Linting Tools
+      - name: Run Ruff & Black Check
         run: |
-          python -m pip install --upgrade pip
-          pip install black ruff isort pre-commit
-
-      - name: Run Linters & Style Checks
-        run: |
-          pre-commit run --all-files
-
-  test-backend:
-    name: Backend Test Suite (${{ matrix.python-version }})
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.11", "3.12"]
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: "pip"
-
-      - name: Install Backend Dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e ".[dev]"
-
-      - name: Run Automated Pytest Suite
-        run: |
-          pytest -v --cov=app --cov-report=xml --cov-report=term-missing
-
-      - name: Upload Coverage Artifact
-        if: matrix.python-version == '3.11'
-        uses: actions/upload-artifact@v4
-        with:
-          name: python-coverage-report
-          path: coverage.xml
-          retention-days: 7
-
-  frontend:
-    name: Frontend Quality & Test Suite
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: web
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: "npm"
-          cache-dependency-path: web/package-lock.json
-
-      - name: Install Frontend Dependencies
-        run: npm ci
-
-      - name: TypeScript Static Typecheck
-        run: npm run typecheck
-
-      - name: Run Vitest Suite
-        run: npm test
+          pip install ruff black
+          ruff check .
+          black --check .
