@@ -13,6 +13,7 @@ from app.security import require_api_key
 from app.tickets import Ticket
 
 STATIC_UI = Path(__file__).parent / "static" / "handoff.html"
+DIST_UI = Path(__file__).parent.parent / "web" / "dist" / "index.html"
 
 # The UI page itself is static; every data endpoint below requires the API key.
 public = APIRouter(prefix="/handoff", tags=["handoff"])
@@ -44,6 +45,8 @@ async def _get(request: Request, ticket_id: str) -> Ticket:
 
 @public.get("/ui", include_in_schema=False)
 async def ui():
+    if DIST_UI.exists():
+        return FileResponse(DIST_UI, media_type="text/html")
     return FileResponse(STATIC_UI, media_type="text/html")
 
 
