@@ -24,9 +24,10 @@ Plataforma autônoma de agentes de inteligência artificial para atendimento con
 - [9. Instalação e Execução](#9-instalação-e-execução)
   - [9.1 Pré-requisitos](#91-pré-requisitos)
   - [9.2 Execução Local com Python](#92-execução-local-com-python)
-  - [9.3 Execução com Docker Compose](#93-execução-com-docker-compose)
-  - [9.4 Stack de Monitoramento (Grafana + Prometheus)](#94-stack-de-monitoramento-grafana--prometheus)
-  - [9.5 Tabela Unificada de Variáveis de Ambiente](#95-tabela-unificada-de-variáveis-de-ambiente)
+  - [9.3 Frontend SPA Moderno (React + TypeScript)](#93-frontend-spa-moderno-react--typescript)
+  - [9.4 Execução com Docker Compose](#94-execução-com-docker-compose)
+  - [9.5 Stack de Monitoramento (Grafana + Prometheus)](#95-stack-de-monitoramento-grafana--prometheus)
+  - [9.6 Tabela Unificada de Variáveis de Ambiente](#96-tabela-unificada-de-variáveis-de-ambiente)
 - [10. Especificação da API REST e WebSockets](#10-especificação-da-api-rest-e-websockets)
 - [11. Suíte de Testes e Qualidade](#11-suíte-de-testes-e-qualidade)
 - [12. Estrutura do Repositório](#12-estrutura-do-repositório)
@@ -331,9 +332,50 @@ playwright install chromium
 uvicorn app.main:app --reload --port 8080
 ```
 
+
 ---
 
-### 9.3 Execução com Docker Compose
+### 9.3 Frontend SPA Moderno (React + TypeScript)
+
+O frontend legado em HTML/templates foi integralmente substituído por uma **Single Page Application (SPA)** moderna construída com **React 19**, **TypeScript** (strict mode), **Vite**, **shadcn/ui**, **Tailwind CSS**, **TanStack Router**, **TanStack Query** e **Zustand**.
+
+A arquitetura do frontend adota padrão **Feature-Based** estrito, com fronteiras isoladas via `eslint-plugin-boundaries`:
+- `src/features/dashboard`: Telemetria em tempo real, KPIs de latência/throughput e snapshot do Prometheus.
+- `src/features/handoff`: Console de atendimento humano (listagem, filtros por status, claim, chat e resolução de tickets).
+- `src/features/chat`: Playground interativo de conversação com suporte a streaming e upload de áudio.
+- `src/features/tools`: Catálogo interativo de ferramentas e modal de criação dinâmica de tools em runtime.
+- `src/shared/`: Componentes visuais (`shared/ui`), cliente HTTP tipado (`shared/lib/api-client`), store e formatadores.
+- `src/app/`: Command Palette global (`Ctrl+K` / `Cmd+K`), layout com alternância de tema e roteador.
+
+#### Comandos do Frontend (`web/`)
+
+```bash
+# 1. Navegar até o diretório do frontend
+cd web
+
+# 2. Instalar dependências
+npm install
+
+# 3. Executar o servidor de desenvolvimento com hot-reload (porta 5173 com proxy para o backend em :8080)
+npm run dev
+
+# 4. Sincronizar e gerar tipos TypeScript a partir do schema OpenAPI do backend
+npm run gen:api
+
+# 5. Executar verificações de tipos, linting estrito e suíte de testes unitários
+npm run typecheck
+npm run lint
+npm test
+
+# 6. Gerar o bundle de produção otimizado (web/dist/)
+npm run build
+```
+
+> **Servindo em Produção:** Quando compilado via `npm run build`, o backend FastAPI detecta automaticamente o diretório `web/dist/`, servindo a aplicação SPA diretamente em `/`, `/dashboard` e `/handoff/ui`, além dos assets em `/assets/`.
+
+---
+
+### 9.4 Execução com Docker Compose
 
 #### Ambiente de Desenvolvimento
 Para inicializar o agente com Redis e PostgreSQL (com extensão pgvector):
@@ -359,7 +401,7 @@ docker compose -f infra/docker-compose.prod.yml up -d
 
 ---
 
-### 9.4 Stack de Monitoramento (Grafana + Prometheus)
+### 9.5 Stack de Monitoramento (Grafana + Prometheus)
 
 Para subir o ambiente completo com Prometheus e painel Grafana pré-configurado:
 
@@ -367,15 +409,15 @@ Para subir o ambiente completo com Prometheus e painel Grafana pré-configurado:
 docker compose -f infra/docker-compose.yml --profile monitoring up -d
 ```
 
-- **Painel de Operações Web do Agente:** `http://localhost:8080/dashboard`
-- **Console do Atendente Humano:** `http://localhost:8080/handoff/ui`
+- **Console Web SPA & Dashboard:** `http://localhost:8080/dashboard` ou `http://localhost:8080/`
+- **Console do Atendente Humano (SPA):** `http://localhost:8080/handoff/ui`
 - **Servidor Prometheus:** `http://localhost:9090`
 - **Dashboard Grafana:** `http://localhost:3000` (Credenciais padrão: `admin` / `admin`)
 - **Documentação Interativa da API (OpenAPI/Swagger):** `http://localhost:8080/docs`
 
 ---
 
-### 9.5 Tabela Unificada de Variáveis de Ambiente
+### 9.6 Tabela Unificada de Variáveis de Ambiente
 
 Todas as configurações da aplicação são gerenciadas centralmente por variáveis de ambiente ou arquivos `.env`. Em ambientes conteinerizados (Docker / Kubernetes), qualquer variável que represente um segredo crítico pode ser montada e lida diretamente do sistema de arquivos através do sufixo `_FILE` (exemplo: `NIM_API_KEY_FILE=/run/secrets/nim_key`).
 
@@ -496,6 +538,11 @@ ai-agent-24-7/
 │   ├── llm/                             # Camada de abstração de inferência
 │   │   ├── base.py                      # Contratos LLMProvider, ToolCall e LLMResponse
 │   │   └── nim.py                       # Cliente para microsserviços NVIDIA NIM
+│   ├── routers/                         # Roteadores modulares da API REST
+│   │   ├── chat.py                      # Endpoints de chat síncrono e WebSocket
+│   │   ├── dashboard.py                 # Roteador do console operacional
+│   │   ├── tools.py                     # Documentação e gestão de ferramentas dinâmicas
+│   │   └── voice.py                     # Pipeline de áudio e transcrição
 │   ├── tools/                           # Ferramentas executáveis pelo agente
 │   │   ├── base.py                      # Registro central e interface BaseTool
 │   │   ├── browser.py                   # Navegador headless Playwright com proteção anti-SSRF
@@ -506,15 +553,13 @@ ai-agent-24-7/
 │   │   ├── vision.py                    # Análise de imagens multimodais via LLM
 │   │   ├── web.py                       # Mecanismos de busca e leitura web segura
 │   │   └── integrations.py              # Inicializador e registro central das ferramentas
-│   ├── static/                          # Arquivos estáticos e interfaces integradas
-│   │   └── handoff.html                 # Console web do atendente humano
 │   ├── channels.py                      # Roteadores de entrega para WhatsApp e Slack
 │   ├── config.py                        # Centralização de configurações e variáveis de ambiente
-│   ├── dashboard.py                     # Console web de operações e monitoramento
+│   ├── dashboard.py                     # Servidor do console web de operações (SPA fallback)
 │   ├── handoff_api.py                   # API REST e controladores de transbordo humano
 │   ├── health.py                        # Verificações de prontidão (readiness) e circuit breaker
 │   ├── i18n.py                          # Detecção heurística de idiomas e mensagens localizadas
-│   ├── main.py                          # Inicialização do FastAPI, rotas e ciclo de vida
+│   ├── main.py                          # Inicialização do FastAPI, montagem de SPA e rotas
 │   ├── memory.py                        # Gestão de sessões no Redis e embeddings no pgvector
 │   ├── metrics.py                       # Definições das métricas de telemetria Prometheus
 │   ├── ratelimit.py                     # Controle de vazão baseado em janela deslizante
@@ -522,6 +567,21 @@ ai-agent-24-7/
 │   ├── security.py                      # Validação de assinaturas HMAC e autenticação JWT
 │   ├── tickets.py                       # Persistência de tickets e disparo de alertas
 │   └── voice.py                         # Pipeline de processamento de áudio (STT + TTS)
+│
+├── web/                                 # Frontend SPA corporativo (React 19, TypeScript, shadcn/ui, Tailwind)
+│   ├── src/
+│   │   ├── app/                         # Camada de aplicação: Router, Layout, Command Palette (Ctrl+K)
+│   │   ├── features/                    # Módulos desacoplados de domínio (Feature-Based)
+│   │   │   ├── dashboard/               # Métricas operacionais, KPIs, Prometheus snapshot
+│   │   │   ├── handoff/                 # Console de atendimento humano (tickets, claim, chat, resolve)
+│   │   │   ├── chat/                    # Playground interativo conversacional (REST + áudio)
+│   │   │   └── tools/                   # Catálogo de ferramentas e criação de dynamic tools
+│   │   ├── shared/                      # Componentes e utilitários transversais
+│   │   │   ├── ui/                      # Design system acessível (Radix UI + Tailwind CSS)
+│   │   │   └── lib/                     # api-client tipado (OpenAPI), store Zustand, formatters
+│   │   └── styles/                      # Design tokens, tipografia Space Grotesk/Inter e dark mode
+│   ├── package.json                     # Scripts (dev, build, lint, typecheck, test, gen:api)
+│   └── vite.config.ts                   # Configuração do Vite com proxy reverso para backend
 │
 ├── infra/                               # Infraestrutura como código e provisionamento
 │   ├── Dockerfile                       # Imagem conteinerizada de produção

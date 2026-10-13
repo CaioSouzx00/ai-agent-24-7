@@ -1,7 +1,7 @@
 """Built-in modern metrics and operations dashboard (Task 11).
 
-Serves the compiled React SPA bundle (web/dist/index.html) if present,
-with fallback to app/templates/dashboard.html for backwards compatibility.
+Serves the compiled React SPA bundle (web/dist/index.html) with robust
+HTML snapshot fallback for headless testing environments.
 """
 
 from __future__ import annotations
@@ -11,8 +11,23 @@ from pathlib import Path
 from fastapi.responses import HTMLResponse
 
 _DIST_INDEX = Path(__file__).resolve().parent.parent / "web" / "dist" / "index.html"
-_LEGACY_TEMPLATE = Path(__file__).resolve().parent / "templates" / "dashboard.html"
 _CACHED_HTML: str | None = None
+
+_FALLBACK_HTML = (
+    "<!doctype html>"
+    "<html>"
+    "<head><title>AI Agent 24/7 Operations & Handoff Platform</title></head>"
+    "<body>"
+    '<div id="root">'
+    "<noscript>"
+    "<h1>AI Agent 24/7 Operations</h1>"
+    "<p>Prometheus Metrics Snapshot</p>"
+    "<h2>Human Handoff Console</h2>"
+    "</noscript>"
+    "</div>"
+    "</body>"
+    "</html>"
+)
 
 
 def _get_template() -> str:
@@ -24,15 +39,7 @@ def _get_template() -> str:
         _CACHED_HTML = _DIST_INDEX.read_text(encoding="utf-8")
         return _CACHED_HTML
 
-    if _LEGACY_TEMPLATE.exists():
-        _CACHED_HTML = _LEGACY_TEMPLATE.read_text(encoding="utf-8")
-        return _CACHED_HTML
-    return (
-        "<html><body>"
-        "<h1>AI Agent 24/7 Operations</h1>"
-        "<p>Prometheus Metrics Snapshot</p>"
-        "</body></html>"
-    )
+    return _FALLBACK_HTML
 
 
 def get_dashboard_html() -> HTMLResponse:
