@@ -1,71 +1,36 @@
-"""FastAPI: health checks, REST/WebSocket chat and webhooks (Phases 2, 4, 5)."""
+"""FastAPI: health checks, REST/WebSocket chat, voice, tools, and webhooks."""
 
 from __future__ import annotations
 
 import hmac
 import json
 import logging
-import time
 from collections.abc import Awaitable, Callable
 from contextlib import asynccontextmanager
 from typing import Any
 
-from fastapi import (
-    BackgroundTasks,
-    Depends,
-    FastAPI,
-    File,
-    Form,
-    HTTPException,
-    Query,
-    Request,
-    UploadFile,
-    WebSocket,
-    WebSocketDisconnect,
-)
-from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
+from fastapi import BackgroundTasks, FastAPI, HTTPException, Query, Request
+from fastapi.responses import JSONResponse, PlainTextResponse
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
-from pydantic import BaseModel
 
 from app.agent.graph import build_graph
 from app.channels import get_senders
 from app.config import get_settings
-from app.dashboard import get_dashboard_html
 from app.handoff_api import api as handoff_api
 from app.handoff_api import public as handoff_public
 from app.health import readiness
 from app.i18n import detect_language, get_localized_message
 from app.llm import get_llm
 from app.memory import InMemorySessionStore, LongTermMemory, SessionStore
-from app.metrics import REQUEST_LATENCY, REQUESTS
-from app.ratelimit import check_rate_limit, limiter
-from app.security import (
-    require_api_key,
-    verify_meta_signature,
-    verify_slack_signature,
-    websocket_authorized,
-)
+from app.routers import chat, dashboard, tools, voice
+from app.runner import run_agent
+from app.security import verify_meta_signature, verify_slack_signature
 from app.tickets import InMemoryTicketStore, RedisTicketStore, notify_humans
 from app.tools import integrations  # noqa: F401  (registers tools)
 from app.tools.base import registry
-from app.tools.dynamic import list_dynamic_tools, unregister_dynamic_tool
 from app.voice import VoicePipeline
 
 log = logging.getLogger(__name__)
-
-
-class ChatIn(BaseModel):
-    session_id: str
-    message: str
-
-
-class CreateDynamicToolIn(BaseModel):
-    name: str
-    description: str
-    url: str
-    method: str = "GET"
-    parameters: dict[str, Any] | None = None
-    headers: dict[str, str] | None = None
 
 
 @asynccontextmanager
@@ -106,30 +71,25 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="AI Agent 24/7", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="AI Agent 24/7", version="0.2.0", lifespan=lifespan)
+
+# Mount modular routers
+app.include_router(chat.router)
+app.include_router(voice.router)
+app.include_router(tools.router)
+app.include_router(dashboard.router)
 app.include_router(handoff_public)
 app.include_router(handoff_api)
 
 
-async def _run(session_id: str, message: str, channel: str, meta: dict | None = None) -> dict:
-    REQUESTS.labels(channel=channel).inc()
-    t0 = time.monotonic()
-    try:
-        out = await app.state.graph.ainvoke(
-            {
-                "session_id": session_id,
-                "user_input": message,
-                "channel": channel,
-                "meta": meta or {},
-            }
-        )
-        return {
-            "response": out.get("response", ""),
-            "handoff": out.get("handoff", False),
-            "paused": out.get("paused", False),
-        }
-    finally:
-        REQUEST_LATENCY.labels(channel=channel).observe(time.monotonic() - t0)
+async def _run(
+    session_id: str,
+    message: str,
+    channel: str,
+    meta: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Execute a single agent interaction turn."""
+    return await run_agent(app, session_id, message, channel, meta)
 
 
 def _senders():
@@ -141,7 +101,7 @@ async def _reply(
     session_id: str,
     text: str,
     send: Callable[[str], Awaitable[None]],
-    meta: dict | None = None,
+    meta: dict[str, Any] | None = None,
 ) -> None:
     """Run the agent and deliver the answer to the originating channel (background task)."""
     try:
@@ -179,85 +139,6 @@ async def ready():
 @app.get("/metrics")
 async def metrics():
     return PlainTextResponse(generate_latest(), media_type=CONTENT_TYPE_LATEST)
-
-
-@app.get("/dashboard", response_class=HTMLResponse)
-async def dashboard():
-    return get_dashboard_html()
-
-
-@app.get("/tools")
-async def tools_docs():
-    return PlainTextResponse(registry.docs())
-
-
-@app.get("/tools/dynamic", dependencies=[Depends(require_api_key)])
-async def get_dynamic_tools():
-    return list_dynamic_tools()
-
-
-@app.post("/tools/dynamic", dependencies=[Depends(require_api_key)])
-async def create_dynamic_tool_endpoint(body: CreateDynamicToolIn):
-    tool = registry.get("create_tool")
-    if not tool:
-        raise HTTPException(500, "create_tool not found in registry")
-    result = await tool.run(
-        name=body.name,
-        description=body.description,
-        url=body.url,
-        method=body.method,
-        parameters=body.parameters,
-        headers=body.headers,
-    )
-    if result.startswith("error:"):
-        raise HTTPException(400, result)
-    return {"message": result, "tool": body.name}
-
-
-@app.delete("/tools/dynamic/{name}", dependencies=[Depends(require_api_key)])
-async def delete_dynamic_tool_endpoint(name: str):
-    if not unregister_dynamic_tool(name):
-        raise HTTPException(404, f"Dynamic tool '{name}' not found")
-    return {"ok": True}
-
-
-@app.post("/chat", dependencies=[Depends(require_api_key), Depends(check_rate_limit)])
-async def chat(body: ChatIn):
-    return await _run(body.session_id, body.message, "rest")
-
-
-@app.post("/voice/chat", dependencies=[Depends(require_api_key), Depends(check_rate_limit)])
-async def voice_chat(
-    file: UploadFile = File(...),  # noqa: B008
-    session_id: str = Form(...),  # noqa: B008
-):
-    audio_bytes = await file.read()
-    pipeline = getattr(app.state, "voice", None) or VoicePipeline()
-    return await pipeline.process(
-        audio_bytes, session_id, _run, filename=file.filename or "audio.mp3"
-    )
-
-
-@app.websocket("/ws/{session_id}")
-async def ws_chat(ws: WebSocket, session_id: str):
-    if not websocket_authorized(ws):
-        await ws.close(code=1008)  # policy violation
-        return
-    await ws.accept()
-    try:
-        while True:
-            text = await ws.receive_text()
-            res = await limiter.is_allowed(
-                f"ws:{session_id}",
-                limit=get_settings().rate_limit_per_minute,
-                window_seconds=60,
-            )
-            if not res.allowed:
-                await ws.send_json({"error": "rate_limited", "retry_after": res.retry_after})
-                continue
-            await ws.send_json(await _run(session_id, text, "ws"))
-    except WebSocketDisconnect:
-        pass
 
 
 @app.post("/webhooks/slack")
