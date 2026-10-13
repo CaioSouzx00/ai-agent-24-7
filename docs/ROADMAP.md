@@ -14,9 +14,10 @@ Legenda de Status:
 ### Fase 0: Governança, Estrutura e Infraestrutura de Qualidade
 | Módulo | Descrição | Status |
 |---|---|---|
-| 0.1 Estrutura do Repositório | Definição da hierarquia de pacotes, arquivos de configuração e licença Apache 2.0 | `[Concluido]` |
+| 0.1 Estrutura do Repositório | Definição da hierarquia de pacotes, arquivos de configuração e licença MIT | `[Concluido]` |
 | 0.2 Tooling de Qualidade | Configuração de Black, Ruff, isort e pre-commit hooks com limite estrito de estilo | `[Concluido]` |
-| 0.3 Suíte de Testes | Configuração do Pytest com modo assíncrono nativo e cobertura de testes unitários | `[Concluido]` |
+| 0.3 Suíte de Testes | Configuração do Pytest com modo assíncrono nativo e 137 testes unitários/integração | `[Concluido]` |
+| 0.4 Automação de Qualidade | Automação local com pre-commit e scripts de verificação rápida sem dependência de runners em nuvem | `[Concluido]` |
 
 ### Fase 1: Camada de Inferência e Provedores LLM
 | Módulo | Descrição | Status |
@@ -29,10 +30,10 @@ Legenda de Status:
 ### Fase 2: Orquestração de Agente e Persistência de Estado
 | Módulo | Descrição | Status |
 |---|---|---|
-| 2.1 Grafo de Decisão (LangGraph) | Grafo com nós para detecção de transbordo, execução do modelo, chamada de ferramentas e finalização | `[Concluido]` |
+| 2.1 Grafo de Decisão (LangGraph) | Grafo cíclico com nós para detecção de transbordo, execução do modelo, chamada de ferramentas e finalização | `[Concluido]` |
 | 2.2 Memória de Sessão de Curto Prazo | `SessionStore` baseado em Redis com fallback transparente para memória volátil em caso de indisponibilidade | `[Concluido]` |
 | 2.3 Memória Semântica de Longo Prazo | `LongTermMemory` estruturado em PostgreSQL com extensão `pgvector` para recuperação de contexto histórico | `[Concluido]` |
-| 2.4 Resiliência de Estado | Isolamento entre sessões de atendimento e corte configurável de histórico para controle de tokens | `[Concluido]` |
+| 2.4 Resiliência de Estado e Multi-Tenancy | Isolamento de histórico de conversação e contexto de memória particionado por `tenant_id` | `[Concluido]` |
 
 ### Fase 3: Catálogo de Ferramentas e Integrações Externas
 | Módulo | Descrição | Status |
@@ -45,20 +46,21 @@ Legenda de Status:
 | 3.6 Ferramentas de Produtividade | `GmailTool` e `CalendarTool` para leitura/envio de emails e manipulação de eventos corporativos | `[Concluido]` |
 | 3.7 Integração com GitHub | `GitHubTool` para consulta de repositórios, listagem e abertura automatizada de issues | `[Concluido]` |
 | 3.8 Análise Visual Multimodal | `ImageAnalysisTool` com suporte a modelos de visão computacional da NVIDIA e OpenAI | `[Concluido]` |
-| 3.9 Síntese Dinâmica de Ferramentas | `CreateToolTool` permitindo criação, registro em runtime e execução de novos utilitários pelo próprio agente | `[Concluido]` |
+| 3.9 Síntese Dinâmica de Ferramentas | `CreateToolTool` permitindo criação, registro em runtime e execução de novas ferramentas HTTP pelo agente | `[Concluido]` |
 
-### Fase 4: Canais de Atendimento, Ingress e Segurança
+### Fase 4: Canais de Atendimento, Ingress, Segurança e Governança
 | Módulo | Descrição | Status |
 |---|---|---|
 | 4.1 Arquitetura Modular de Routers | Separação do `main.py` em sub-roteadores dedicados (`chat`, `voice`, `tools`, `dashboard`) | `[Concluido]` |
 | 4.2 API REST e WebSockets | Endpoint de conversação síncrona `POST /chat` e canal contínuo bidirecional `WebSocket /ws/{session_id}` | `[Concluido]` |
 | 4.3 Webhook Slack | Suporte a recepção de eventos Slack com validação de assinatura criptográfica HMAC-SHA256 | `[Concluido]` |
 | 4.4 Webhook WhatsApp / Meta | Endpoint de webhook com handshake de verificação e validação criptográfica de payload | `[Concluido]` |
-| 4.5 Mecanismos de Autenticação | Suporte dual a tokens Bearer JWT (HS256) e API Keys estáticas, com modo estrito de produção | `[Concluido]` |
-| 4.6 Controle de Vazão (Rate Limiting) | Middleware com algoritmo de janela deslizante em Redis e fallback local, emitindo cabeçalhos padrão IETF | `[Concluido]` |
-| 4.7 Webhook Gmail Pub/Sub | Notificações push do Google Cloud Pub/Sub para processamento de emails recebidos e réplicas | `[Concluido]` |
-| 4.8 Isolamento Multi-Tenancy | Isolamento de sessões, memória vetorial pgvector e tickets por `tenant_id` | `[Concluido]` |
-| 4.9 Métricas de Negócio | Endpoint `/metrics/business`, telemetria de latência por ferramenta e contadores de transbordo | `[Concluido]` |
+| 4.5 Webhook Gmail Cloud Pub/Sub | Endpoint `POST /webhooks/gmail` com recepção de notificações push, verificação de token e réplica por email | `[Concluido]` |
+| 4.6 Mecanismos de Autenticação | Suporte dual a tokens Bearer JWT (HS256) e API Keys estáticas, com modo estrito de validação em produção | `[Concluido]` |
+| 4.7 Controle de Vazão (Rate Limiting) | Middleware com algoritmo de janela deslizante em Redis e fallback local, emitindo cabeçalhos padrão IETF | `[Concluido]` |
+| 4.8 Isolamento Multi-Tenancy Leve | Particionamento e isolamento de sessões, memória vetorial pgvector e tickets por `tenant_id` | `[Concluido]` |
+| 4.9 Métricas e Telemetria de Negócio | Endpoint `GET /metrics/business`, telemetria de latência p95/avg por ferramenta e taxas de transbordo 24h | `[Concluido]` |
+| 4.10 Documentação Interativa e Coleções | Exemplos ricos OpenAPI e coleções completas exportadas para Postman v2.1 e Insomnia v4 | `[Concluido]` |
 
 ### Fase 5: Voz, Multimídia e Internacionalização
 | Módulo | Descrição | Status |
@@ -72,31 +74,41 @@ Legenda de Status:
 | Módulo | Descrição | Status |
 |---|---|---|
 | 6.1 Detecção de Intenções Críticas | Interceptação em tempo real de mensagens que exigem suporte humano (jurídico, cancelamento, suporte avançado) | `[Concluido]` |
-| 6.2 Persistência e Fila de Chamados | Armazenamento de tickets via `RedisTicketStore` com estados de ciclo de vida (`open`, `claimed`, `resolved`) | `[Concluido]` |
-| 6.3 Silenciamento do Agente | Interrupção imediata de respostas automatizadas na sessão enquanto o ticket estiver em atendimento humano | `[Concluido]` |
-| 6.4 Painel Administrativo Operacional | Interface web corporativa em `/dashboard` permitindo reivindicar chamados, responder clientes e resolver tickets | `[Concluido]` |
+| 6.2 Persistência e Fila de Chamados | Armazenamento de tickets via `RedisTicketStore` e `InMemoryTicketStore` com estados de ciclo de vida (`open`, `claimed`, `resolved`) | `[Concluido]` |
+| 6.3 Silenciamento do Agente | Interrupção imediata de respostas automatizadas na sessão enquanto o ticket estiver sob atendimento humano | `[Concluido]` |
+| 6.4 API REST de Gestão de Tickets | Endpoints para listagem, claim, reply e resolve de chamados com suporte a filtragem por tenant | `[Concluido]` |
 
-### Fase 7: Observabilidade, Monitoramento e Infraestrutura
+### Fase 7: Frontend Moderno (Single Page Application em React + TypeScript)
 | Módulo | Descrição | Status |
 |---|---|---|
-| 7.1 Probes de Saúde Kubernetes | Endpoints `/health`, `/live` e `/ready` com inspeção de conectividade de banco, cache e modelo | `[Concluido]` |
-| 7.2 Métricas Prometheus | Coleta de métricas em tempo real (`/metrics`) com contadores de requisições, taxas de erro e latência | `[Concluido]` |
-| 7.3 Dashboard Grafana | Painel de monitoramento executivo pré-configurado com visualizações de throughput, latência e status | `[Concluido]` |
-| 7.4 Gestão de Segredos de Produção | Carregamento automático de credenciais a partir de arquivos montados (`*_FILE`) para conformidade em containers | `[Concluido]` |
-| 7.5 Orquestração Temporal | Estrutura de workflows e worker assíncrono para tarefas de longa duração e tolerância a falhas | `[Concluido]` |
+| 7.1 Arquitetura Feature-Based | Organização modular em `web/` com isolamento estrito entre features (`dashboard`, `handoff`, `chat`, `tools`) | `[Concluido]` |
+| 7.2 Design System Acessível | Interface em modo escuro nativo com Radix UI, Tailwind CSS, Lucide Icons e tipografia moderna | `[Concluido]` |
+| 7.3 Painel Operacional em Tempo Real | Monitoramento visual de status dos nós, métricas de Prometheus e contadores de tickets | `[Concluido]` |
+| 7.4 Console de Handoff Humano | Workspace de atendimento ao vivo permitindo aos operadores assumir conversas e responder aos clientes | `[Concluido]` |
+| 7.5 Playground Conversacional | Chat interativo com suporte a texto, anexos, upload de áudio e visualização de chamadas de ferramentas | `[Concluido]` |
+| 7.6 Catálogo e Gestão de Tools | Visualização de esquemas de ferramentas disponíveis e criação dinâmica de novas ferramentas HTTP | `[Concluido]` |
+
+### Fase 8: Observabilidade, Resiliência e Infraestrutura
+| Módulo | Descrição | Status |
+|---|---|---|
+| 8.1 Probes de Saúde Kubernetes | Endpoints `/health`, `/live` e `/ready` com inspeção de conectividade de banco, cache, modelo e segredos | `[Concluido]` |
+| 8.2 Métricas Prometheus | Coleta de métricas em tempo real (`/metrics`) com contadores de requisições, taxas de erro e latência | `[Concluido]` |
+| 8.3 Dashboard Grafana | Painel de monitoramento executivo pré-configurado com visualizações de throughput, latência e status | `[Concluido]` |
+| 8.4 Gestão de Segredos de Produção | Carregamento automático de credenciais a partir de arquivos montados (`*_FILE`) para Docker e Kubernetes Secrets | `[Concluido]` |
+| 8.5 Testes de Integração Real | Suíte de testes com instâncias reais de PostgreSQL (pgvector) e Redis validando persistência e cache | `[Concluido]` |
+| 8.6 Orquestração Temporal E2E | Worker assíncrono e workflows duráveis integrados ao ecossistema Temporal para tarefas resilientes | `[Concluido]` |
 
 ---
 
 ## 2. Planejamento Estratégico e Próximos Passos
 
-### Versão 0.3.0 (Foco: Conectores Corporativos e Resiliência Distribuída)
-- `[Planejado]` Conector nativo para sistemas de CRM (Salesforce Service Cloud e Zendesk Support).
-- `[Planejado]` Suporte a streaming de áudio bidirecional em tempo real via WebRTC para chamadas telefônicas diretas.
-- `[Planejado]` Camada de avaliação automatizada de qualidade de respostas (Ragas / TruLens) em pipeline de telemetria.
-- `[Planejado]` Modo multi-inquilino (*multi-tenancy*) com isolamento de contexto de memória por organização.
+### Versão 0.3.x (Foco: Conectores Corporativos e Telefonia)
+- `[Planejado]` Conectores nativos bidirecionais para plataformas de CRM (Salesforce Service Cloud e Zendesk Support).
+- `[Planejado]` Streaming de áudio bidirecional em tempo real via WebRTC para integração com sistemas de telefonia (SIP/VoIP).
+- `[Planejado]` Framework de avaliação automatizada de qualidade e alinhamento de respostas LLM (Ragas / DeepEval).
 
-### Versão 0.4.0 (Foco: Orquestração em Escala e Conformidade)
-- `[Planejado]` Helm Charts oficiais e definições de Kubernetes Operator para implantação automatizada.
-- `[Planejado]` Módulo de expurgo programado de dados e anonimização de dados pessoais para conformidade com LGPD e GDPR.
-- `[Planejado]` Cache semântico de respostas de LLM baseado em similaridade vetorial para otimização de custos e latência.
+### Versão 0.4.0 (Foco: Orquestração em Escala, Otimização e Conformidade)
+- `[Planejado]` Helm Charts oficiais e Kubernetes Operator para provisionamento e auto-scaling horizontal em clusters K8s.
+- `[Planejado]` Cache semântico de inferência vetorial para redução de latência e consumo de tokens em perguntas frequentes.
+- `[Planejado]` Módulo de anonimização e expurgo programado de dados para conformidade estrita com LGPD e GDPR.
 - `[Planejado]` Suporte a modelos de raciocínio estendido (*Chain-of-Thought*) com exibição transparente de rastros analíticos.
