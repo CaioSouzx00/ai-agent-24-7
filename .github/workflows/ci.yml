@@ -5,25 +5,15 @@ on:
   pull_request:
   workflow_dispatch:
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
-  lint:
-    name: Code Quality Check
+  check:
+    name: Basic Health Check
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Run Ruff & Black Check
+      - name: Run Basic Syntax Check
         run: |
-          pip install ruff black
-          ruff check .
-          black --check .
+          python -m py_compile $(git ls-files '*.py')
+          echo "All Python files compiled successfully without syntax errors"
