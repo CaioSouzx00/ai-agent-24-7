@@ -4,14 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import (
-    APIRouter,
-    Depends,
-    File,
-    Form,
-    Request,
-    UploadFile,
-)
+from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 
 from app.ratelimit import check_rate_limit
 from app.runner import run_agent

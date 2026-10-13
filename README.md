@@ -26,6 +26,7 @@ Plataforma autônoma de agentes de inteligência artificial para atendimento con
   - [9.2 Execução Local com Python](#92-execução-local-com-python)
   - [9.3 Execução com Docker Compose](#93-execução-com-docker-compose)
   - [9.4 Stack de Monitoramento (Grafana + Prometheus)](#94-stack-de-monitoramento-grafana--prometheus)
+  - [9.5 Tabela Unificada de Variáveis de Ambiente](#95-tabela-unificada-de-variáveis-de-ambiente)
 - [10. Especificação da API REST e WebSockets](#10-especificação-da-api-rest-e-websockets)
 - [11. Suíte de Testes e Qualidade](#11-suíte-de-testes-e-qualidade)
 - [12. Estrutura do Repositório](#12-estrutura-do-repositório)
@@ -371,6 +372,47 @@ docker compose -f infra/docker-compose.yml --profile monitoring up -d
 - **Servidor Prometheus:** `http://localhost:9090`
 - **Dashboard Grafana:** `http://localhost:3000` (Credenciais padrão: `admin` / `admin`)
 - **Documentação Interativa da API (OpenAPI/Swagger):** `http://localhost:8080/docs`
+
+---
+
+### 9.5 Tabela Unificada de Variáveis de Ambiente
+
+Todas as configurações da aplicação são gerenciadas centralmente por variáveis de ambiente ou arquivos `.env`. Em ambientes conteinerizados (Docker / Kubernetes), qualquer variável que represente um segredo crítico pode ser montada e lida diretamente do sistema de arquivos através do sufixo `_FILE` (exemplo: `NIM_API_KEY_FILE=/run/secrets/nim_key`).
+
+| Variável | Tipo | Padrão (Dev) | Obrigatório em Prod? | Descrição e Finalidade |
+| :--- | :---: | :---: | :---: | :--- |
+| `APP_ENV` | `string` | `dev` | Não | Ambiente de execução (`dev`, `prod`, `test`). Ativa validações estritas de segurança em `prod`. |
+| `LLM_PROVIDER` | `string` | `nim` | Não | Provedor de inferência do modelo (`nim` ou `openai`). |
+| `NIM_BASE_URL` | `string` | `http://localhost:8000/v1` | Sim | URL base da API OpenAI-compatible do NVIDIA NIM ou provedor LLM. |
+| `NIM_MODEL` | `string` | `meta/llama-3.1-8b-instruct` | Não | Identificador do modelo de linguagem utilizado no grafo de raciocínio. |
+| `NIM_EMBED_MODEL` | `string` | `nvidia/nv-embedqa-e5-v5` | Não | Modelo gerador de embeddings para a memória vetorial de longo prazo. |
+| `NIM_API_KEY` | `string` | `not-needed-locally` | Sim (se nuvem) | Chave de autenticação da NVIDIA API. Não pode conter placeholder em `prod`. |
+| `REDIS_URL` | `string` | `redis://localhost:6379/0` | Recomendado | Conexão com Redis para histórico de sessões, tickets de handoff e rate limiting. |
+| `DATABASE_URL` | `string` | `postgresql://agent:agent@localhost:5432/agent` | Recomendado | Conexão PostgreSQL com extensão `pgvector` para memória semântica persistente. |
+| `API_KEYS` | `string` | `""` | Sim (ou JWT) | Lista de chaves estáticas separadas por vírgula para autenticação de clientes nos endpoints. |
+| `JWT_SECRET` | `string` | `""` | Sim (ou API_KEYS) | Chave secreta compartilhada HMAC-SHA256 para assinatura e validação de tokens JWT. |
+| `JWT_JWKS_URL` | `string` | `""` | Opcional | Endpoint JWKS para validação assimétrica de chaves públicas (Clerk, Auth0, etc.). |
+| `JWT_AUDIENCE` | `string` | `""` | Opcional | Claim `aud` esperado na validação dos tokens JWT de clientes. |
+| `JWT_ISSUER` | `string` | `""` | Opcional | Claim `iss` esperado na validação dos tokens JWT de clientes. |
+| `SLACK_BOT_TOKEN` | `string` | `""` | Condicional | Token de bot do Slack (`xoxb-...`) para envio de mensagens via ferramenta operacional. |
+| `SLACK_SIGNING_SECRET` | `string` | `""` | Condicional | Segredo de assinatura HMAC para validação criptográfica do webhook do Slack. |
+| `SLACK_HANDOFF_WEBHOOK`| `string` | `""` | Opcional | Webhook de entrada (Slack/Teams) para alertas imediatos de chamados humanos. |
+| `PUBLIC_URL` | `string` | `""` | Recomendado | URL pública do agente usada para links diretos nos alertas de transbordo humano. |
+| `GITHUB_TOKEN` | `string` | `""` | Condicional | Token de acesso do GitHub para ativação da ferramenta de issues e repositórios. |
+| `GOOGLE_ACCESS_TOKEN` | `string` | `""` | Condicional | Token de acesso OAuth direto do Google para ferramentas Gmail e Google Calendar. |
+| `GOOGLE_SERVICE_ACCOUNT_FILE` | `string` | `""` | Condicional | Caminho do arquivo JSON de Service Account do Google Cloud. |
+| `GOOGLE_OAUTH_CREDENTIALS_FILE` | `string` | `""` | Condicional | Caminho do arquivo JSON de credenciais OAuth de cliente Google. |
+| `WHATSAPP_TOKEN` | `string` | `""` | Condicional | Token de acesso Bearer da API Meta Graph / WhatsApp Cloud para envio de mensagens. |
+| `WHATSAPP_VERIFY_TOKEN`| `string` | `""` | Condicional | Token configurado no portal da Meta para o handshake de verificação do webhook. |
+| `WHATSAPP_APP_SECRET` | `string` | `""` | Condicional | Segredo da aplicação Meta para validação HMAC-SHA256 dos payloads do webhook. |
+| `VISION_MODEL` | `string` | `""` | Condicional | Modelo multimodal para análise visual (ativação da ferramenta `ImageAnalysisTool`). |
+| `STT_MODEL` | `string` | `whisper-1` | Opcional | Modelo de transcrição de voz para texto no pipeline de áudio `/voice/chat`. |
+| `TTS_MODEL` | `string` | `tts-1` | Opcional | Modelo de síntese vocal de texto para áudio no pipeline de áudio `/voice/chat`. |
+| `TTS_VOICE` | `string` | `alloy` | Opcional | Perfil de voz utilizado na síntese vocal (`alloy`, `echo`, `nova`, `onyx`, etc.). |
+| `RATE_LIMIT_ENABLED` | `bool` | `true` | Não | Ativação do middleware de controle de vazão por janela deslizante. |
+| `RATE_LIMIT_PER_MINUTE`| `int` | `60` | Não | Número máximo de requisições permitidas por minuto por chave/sessão/IP. |
+| `TEMPORAL_ADDRESS` | `string` | `localhost:7233` | Condicional | Endereço do cluster Temporal para workflows duráveis e worker assíncrono. |
+| `SENTRY_DSN` | `string` | `""` | Opcional | DSN para monitoramento e rastreamento centralizado de erros em produção. |
 
 ---
 

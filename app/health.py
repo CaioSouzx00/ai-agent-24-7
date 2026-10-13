@@ -20,8 +20,39 @@ async def _check(fn) -> str:
         return "down"
 
 
-async def readiness(llm, sessions, memory, tickets=None) -> tuple[int, dict[str, Any]]:
+async def readiness(
+    llm,
+    sessions,
+    memory,
+    tickets=None,
+    settings: Any = None,
+) -> tuple[int, dict[str, Any]]:
     components: dict[str, str] = {}
+
+    # Strict production check: fail readiness if critical secrets use insecure defaults
+    cfg = settings
+    if cfg is None:
+        try:
+            from app.config import get_settings
+
+            cfg = get_settings()
+        except Exception:
+            cfg = None
+
+    if cfg is not None and getattr(cfg, "app_env", "") in ("prod", "production"):
+        from app.secrets import validate_production_settings
+
+        issues = validate_production_settings(cfg)
+        critical_issues = [i for i in issues if "CRITICAL" in i]
+        if critical_issues:
+            components["security"] = "failed (insecure production secrets)"
+            return 503, {
+                "status": "not_ready",
+                "error": "insecure_production_configuration",
+                "issues": critical_issues,
+                "components": components,
+            }
+
     tasks: dict[str, Any] = {"llm": _check(llm.health)}
     if hasattr(sessions, "ping"):
         tasks["redis"] = _check(sessions.ping)
