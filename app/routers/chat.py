@@ -2,13 +2,7 @@
 
 from __future__ import annotations
 
-from fastapi import (
-    APIRouter,
-    Depends,
-    Request,
-    WebSocket,
-    WebSocketDisconnect,
-)
+from fastapi import APIRouter, Depends, Request, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 
 from app.config import get_settings

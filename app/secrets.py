@@ -46,12 +46,32 @@ def validate_production_settings(settings: Settings) -> list[str]:
         return []
 
     issues: list[str] = []
+    insecure_dev_values = {
+        "dev-secret-key",
+        "dev-secret",
+        "secret",
+        "changeme",
+        "123456",
+        "test",
+        "password",
+    }
 
     # 1. Auth check: prod must have API keys or JWT configured
-    has_keys = bool([k.strip() for k in settings.api_keys.split(",") if k.strip()])
+    keys = [k.strip() for k in settings.api_keys.split(",") if k.strip()]
+    has_keys = bool(keys)
     has_jwt = bool(settings.jwt_secret or settings.jwt_jwks_url)
     if not has_keys and not has_jwt:
         issues.append("CRITICAL: Production environment requires API_KEYS or JWT configuration")
+
+    # Insecure API keys or JWT secrets
+    insecure_keys = [k for k in keys if k.lower() in insecure_dev_values]
+    if insecure_keys:
+        issues.append(
+            f"CRITICAL: API_KEYS contains insecure development default: {', '.join(insecure_keys)}"
+        )
+
+    if settings.jwt_secret and settings.jwt_secret.lower() in insecure_dev_values:
+        issues.append("CRITICAL: JWT_SECRET is using an insecure development default")
 
     # 2. Insecure default keys
     if settings.nim_api_key in ("not-needed-locally", "mock"):

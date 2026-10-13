@@ -42,6 +42,19 @@ services:
     ports: ["7233:7233"]
     profiles: ["workflows"]
 
+  temporal-worker:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile
+    command: ["python", "scripts/temporal_worker.py"]
+    environment:
+      TEMPORAL_ADDRESS: temporal:7233
+      REDIS_URL: redis://redis:6379/0
+      DATABASE_URL: postgresql://agent:agent@postgres:5432/agent
+      NIM_BASE_URL: http://nim:8000/v1
+    depends_on: [temporal, redis, postgres]
+    profiles: ["workflows"]
+
   app:
     build:
       context: ..

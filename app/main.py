@@ -131,7 +131,11 @@ async def live():
 @app.get("/ready")
 async def ready():
     code, body = await readiness(
-        app.state.llm, app.state.sessions, app.state.memory, app.state.tickets
+        app.state.llm,
+        app.state.sessions,
+        app.state.memory,
+        getattr(app.state, "tickets", None),
+        settings=get_settings(),
     )
     return JSONResponse(body, status_code=code)
 

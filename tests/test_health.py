@@ -77,3 +77,32 @@ def test_ready_endpoint(llm_ok, status):
     r = TestClient(app).get("/ready")
     assert r.status_code == status
     assert r.json()["components"]["llm"] == ("ok" if llm_ok else "down")
+
+
+async def test_readiness_fails_in_production_with_insecure_secrets():
+    from app.config import Settings
+
+    bad_prod_cfg = Settings(
+        app_env="prod",
+        api_keys="dev-secret-key",
+        jwt_secret="",
+    )
+    code, body = await readiness(StubLLM(), Pingable(), Pingable(), settings=bad_prod_cfg)
+    assert code == 503
+    assert body["status"] == "not_ready"
+    assert "insecure" in body["error"]
+    assert body["components"]["security"] == "failed (insecure production secrets)"
+
+
+async def test_readiness_succeeds_in_production_with_valid_secrets():
+    from app.config import Settings
+
+    good_prod_cfg = Settings(
+        app_env="prod",
+        api_keys="strong-production-api-token-xyz-987",
+        nim_api_key="nvapi-production-key-valid",
+        database_url="postgresql://prod_user:prod_pass@db.internal:5432/agent",
+    )
+    code, body = await readiness(StubLLM(), Pingable(), Pingable(), settings=good_prod_cfg)
+    assert code == 200
+    assert body["status"] == "ready"
