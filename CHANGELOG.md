@@ -24,7 +24,7 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - **Isolamento Multi-Tenancy Leve:** Suporte a `tenant_id` em toda a plataforma, garantindo isolamento de contexto de histórico em Redis, persistência semântica no PostgreSQL (`pgvector`) e filas de tickets de transbordo.
 - **Telemetria e Métricas de Negócio:** Endpoint dedicado `GET /metrics/business`, contadores Prometheus de transbordo (`agent_handoffs_total`), histograma de latência por ferramenta (`agent_tool_duration_seconds`) e agregador analítico em memória com janela deslizante.
 - **Coleções de API e Exemplos OpenAPI:** Exportação de coleções completas em `docs/postman_collection.json` e `docs/insomnia_collection.json`, além de exemplos interativos adicionados aos esquemas do OpenAPI (`/docs`).
-- **Pipeline de Integração Contínua (CI):** Configuração de workflow no GitHub Actions (`.github/workflows/ci.yml`) validando formatação com Black/Ruff/isort, tipagem estática e execução do pytest e vitest.
+- **Automação de Qualidade de Código:** Padronização com Black, Ruff, isort e pre-commit para validação local determinística sem dependência de runners em nuvem.
 - **Orquestração e Testes de Resiliência:** Testes de integração com instâncias reais de PostgreSQL (pgvector) e Redis, além de validação ponta a ponta de workflows duráveis com Temporal.
 
 ---

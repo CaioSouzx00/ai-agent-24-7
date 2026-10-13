@@ -1,6 +1,6 @@
 # AI Agent 24/7
 
-[![CI](https://img.shields.io/badge/CI-passing-brightgreen?logo=github-actions&logoColor=white)](https://github.com/CaioSouzx00/ai-agent-24-7/actions)
+[![Code Quality](https://img.shields.io/badge/Code%20Quality-Verified-brightgreen?logo=pre-commit&logoColor=white)](tests/)
 [![Python](https://img.shields.io/badge/Python-3.11%20%7C%203.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev/)
@@ -555,7 +555,6 @@ pre-commit run --all-files
 
 ```
 ai-agent-24-7/
-├── .github/workflows/ci.yml             # GitHub Actions CI pipeline (lint, test, build)
 ├── app/                                 # Backend application source code
 │   ├── agent/                           # Agent core logic and graph definition
 │   │   ├── graph.py                     # LangGraph state machine and routing nodes

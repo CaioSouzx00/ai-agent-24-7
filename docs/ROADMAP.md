@@ -17,7 +17,7 @@ Legenda de Status:
 | 0.1 Estrutura do Repositório | Definição da hierarquia de pacotes, arquivos de configuração e licença MIT | `[Concluido]` |
 | 0.2 Tooling de Qualidade | Configuração de Black, Ruff, isort e pre-commit hooks com limite estrito de estilo | `[Concluido]` |
 | 0.3 Suíte de Testes | Configuração do Pytest com modo assíncrono nativo e 137 testes unitários/integração | `[Concluido]` |
-| 0.4 Integração Contínua (CI) | Pipeline do GitHub Actions para validação estática, linting e execução da suíte de testes | `[Concluido]` |
+| 0.4 Automação de Qualidade | Automação local com pre-commit e scripts de verificação rápida sem dependência de runners em nuvem | `[Concluido]` |
 
 ### Fase 1: Camada de Inferência e Provedores LLM
 | Módulo | Descrição | Status |
