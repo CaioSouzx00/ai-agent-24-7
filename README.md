@@ -1,6 +1,18 @@
 # AI Agent 24/7
 
+[![CI](https://github.com/CaioSouzx00/ai-agent-24-7/actions/workflows/ci.yml/badge.svg)](https://github.com/CaioSouzx00/ai-agent-24-7/actions)
+[![Python](https://img.shields.io/badge/Python-3.11%20%7C%203.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
+[![Tests](https://img.shields.io/badge/Tests-137%20passing-brightgreen)](tests/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 Autonomous enterprise artificial intelligence platform for conversational customer service, process orchestration, and hardened tool execution in mission-critical environments.
+
+**Resources:**
+[Release Notes](docs/RELEASE_NOTES.md) | [Postman Collection](docs/postman_collection.json) | [Insomnia Collection](docs/insomnia_collection.json) | [Frontend Documentation](web/README.md)
 
 ---
 
@@ -454,6 +466,7 @@ All application settings are managed through environment variables or `.env` fil
 | `TTS_VOICE` | `string` | `alloy` | Optional | Voice profile name (`alloy`, `echo`, `nova`, `onyx`, etc.). |
 | `RATE_LIMIT_ENABLED` | `bool` | `true` | No | Enables the sliding window rate-limiting middleware. |
 | `RATE_LIMIT_PER_MINUTE`| `int` | `60` | No | Maximum allowed requests per minute per key, session, or IP. |
+| `GMAIL_PUBSUB_VERIFICATION_TOKEN` | `string` | `""` | Optional | Shared token for verifying Google Cloud Pub/Sub push notifications (`?token=...` or Bearer header). |
 | `TEMPORAL_ADDRESS` | `string` | `localhost:7233` | Conditional | Host address for Temporal workflow orchestrator and background worker. |
 | `SENTRY_DSN` | `string` | `""` | Optional | Sentry DSN for centralized exception tracing in production. |
 
@@ -467,21 +480,23 @@ All application settings are managed through environment variables or `.env` fil
 | `/live` | `GET` | Container orchestrator liveness probe (Kubernetes/Docker). | Public |
 | `/ready` | `GET` | Deep readiness probe verifying LLM, Redis, Postgres, and circuit breakers. | Public |
 | `/metrics` | `GET` | Prometheus-formatted metrics scrape endpoint. | Public |
+| `/metrics/business` | `GET` | Aggregated business telemetry (handoffs/day, tool latency, usage ranking). | Public |
 | `/dashboard` | `GET` | Single Page Application operations console and telemetry dashboard. | Public |
 | `/tools` | `GET` | Dynamically generated Markdown documentation of registered tools. | Public |
-| `/chat` | `POST` | Synchronous conversational turn with rate limiting. | API Key or JWT |
+| `/chat` | `POST` | Synchronous conversational turn with rate limiting and multi-tenancy. | API Key or JWT |
 | `/voice/chat` | `POST` | Multipart audio upload returning transcription and neural speech audio. | API Key or JWT |
 | `/ws/{session_id}` | `WS` | Full-duplex real-time WebSocket connection. | API Key or JWT |
 | `/tools/dynamic` | `GET` | Lists schemas of all dynamic tools created at runtime. | API Key or JWT |
 | `/tools/dynamic` | `POST` | Registers a new HTTP REST dynamic tool at runtime. | API Key or JWT |
 | `/tools/dynamic/{name}` | `DELETE` | Removes and unregisters a dynamic tool from the registry. | API Key or JWT |
 | `/handoff/ui` | `GET` | Human operator console workspace (SPA). | Public (Workspace) |
-| `/handoff/tickets` | `GET` | Lists escalated tickets with optional status filtering. | API Key or JWT |
+| `/handoff/tickets` | `GET` | Lists escalated tickets with optional status and tenant filtering. | API Key or JWT |
 | `/handoff/tickets/{id}/claim` | `POST` | Claims a ticket assigning it to an operator. | API Key or JWT |
 | `/handoff/tickets/{id}/reply` | `POST` | Sends a message from the operator to the client channel. | API Key or JWT |
 | `/handoff/tickets/{id}/resolve` | `POST` | Resolves the ticket, re-enabling automatic agent operation. | API Key or JWT |
 | `/webhooks/slack` | `POST` | Inbound event and mention webhook for Slack App. | Slack HMAC Signature |
 | `/webhooks/whatsapp` | `GET/POST`| Verification handshake and inbound message webhook for Meta. | Meta HMAC Signature |
+| `/webhooks/gmail` | `POST` | Inbound Google Cloud Pub/Sub push notification webhook for automated email handling. | Optional Token |
 
 ---
 
@@ -491,7 +506,7 @@ The codebase enforces strict quality gates through automated tests and static an
 
 ### Running Automated Tests
 
-The backend test suite includes **127 passing automated tests** across unit, integration, and end-to-end flows:
+The backend test suite includes **137 passing automated tests** across unit, integration, and end-to-end flows:
 
 ```bash
 # Execute full test suite with verbose output

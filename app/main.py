@@ -231,3 +231,57 @@ async def whatsapp_webhook(request: Request, background: BackgroundTasks):
         {"phone_number_id": phone_id},
     )
     return {"ok": True}
+
+
+@app.post("/webhooks/gmail")
+async def gmail_pubsub_webhook(
+    request: Request,
+    background: BackgroundTasks,
+    token: str | None = Query(default=None),
+):
+    """Google Cloud Pub/Sub push notification endpoint for Gmail mailbox updates (Task 4.4)."""
+    import base64
+
+    expected = get_settings().gmail_pubsub_verification_token
+    if expected:
+        auth_header = request.headers.get("authorization", "")
+        token_match = token == expected or auth_header == f"Bearer {expected}"
+        if not token_match:
+            raise HTTPException(403, "invalid Gmail Pub/Sub verification token")
+
+    body = await request.body()
+    try:
+        payload = json.loads(body)
+    except Exception:
+        raise HTTPException(400, "invalid JSON payload") from None
+
+    message = payload.get("message", {})
+    message_data = message.get("data")
+    if not message_data:
+        return {"ok": True, "status": "ignored_no_data"}
+
+    try:
+        decoded_bytes = base64.b64decode(message_data)
+        notification = json.loads(decoded_bytes.decode("utf-8"))
+    except Exception:
+        log.warning("Failed to decode Gmail Pub/Sub base64 payload")
+        return {"ok": True, "status": "malformed_data"}
+
+    email_address = notification.get("emailAddress", "unknown")
+    history_id = str(notification.get("historyId", ""))
+    snippet = (
+        notification.get("snippet")
+        or notification.get("subject")
+        or f"New email activity for {email_address} (historyId: {history_id})"
+    )
+    sender = notification.get("from") or email_address
+
+    background.add_task(
+        _reply,
+        "gmail",
+        sender,
+        snippet,
+        lambda t: _senders().gmail(sender, "Re: Automated Assistant", t),
+        {"history_id": history_id, "email_address": email_address},
+    )
+    return {"ok": True, "email_address": email_address, "history_id": history_id}

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.channels import get_senders
 from app.dashboard import get_dashboard_html
@@ -16,12 +16,35 @@ api = APIRouter(prefix="/handoff", tags=["handoff"], dependencies=[Depends(requi
 
 
 class ClaimIn(BaseModel):
-    assignee: str
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "assignee": "support_agent_sarah",
+                }
+            ]
+        }
+    )
+
+    assignee: str = Field(..., description="Username or operator ID claiming this ticket")
 
 
 class ReplyIn(BaseModel):
-    text: str
-    assignee: str | None = None
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "text": "Hello, I am Sarah from Support. How can I assist you today?",
+                    "assignee": "support_agent_sarah",
+                }
+            ]
+        }
+    )
+
+    text: str = Field(..., description="Message text to send back to the user on their channel")
+    assignee: str | None = Field(
+        default=None, description="Optional operator name updating the assignee"
+    )
 
 
 def _store(request: Request):
@@ -44,8 +67,15 @@ async def ui():
 
 
 @api.get("/tickets")
-async def list_tickets(request: Request, status: str | None = None):
-    return [t.to_dict() for t in await _store(request).list(status)]
+async def list_tickets(
+    request: Request,
+    status: str | None = None,
+    tenant_id: str | None = None,
+):
+    resolved_tenant = tenant_id or request.headers.get("x-tenant-id")
+    return [
+        t.to_dict() for t in await _store(request).list(status=status, tenant_id=resolved_tenant)
+    ]
 
 
 @api.get("/tickets/{ticket_id}")

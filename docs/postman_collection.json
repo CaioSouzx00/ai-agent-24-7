@@ -1,0 +1,439 @@
+{
+  "info": {
+    "_postman_id": "ai-agent-24-7-collection-v1",
+    "name": "AI Agent 24/7 API Collection",
+    "description": "Enterprise Postman collection for the AI Agent 24/7 autonomous platform covering Chat, Voice, Tools, Multi-Tenant Handoff, Business Telemetry, and Inbound Webhooks.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "api_key",
+      "value": "dev-api-key",
+      "type": "string"
+    },
+    {
+      "key": "tenant_id",
+      "value": "default",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Chat & Voice",
+      "item": [
+        {
+          "name": "Chat Turn (REST)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"session_id\": \"sess_demo_001\",\n  \"message\": \"What tools do you have available?\",\n  \"tenant_id\": \"{{tenant_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/chat",
+              "host": ["{{base_url}}"],
+              "path": ["chat"]
+            },
+            "description": "Send a synchronous message turn to the AI agent with rate limiting and multi-tenancy context."
+          }
+        },
+        {
+          "name": "Voice Chat (Audio Multipart)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "audio",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "session_id",
+                  "value": "sess_voice_001",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/voice/chat",
+              "host": ["{{base_url}}"],
+              "path": ["voice", "chat"]
+            },
+            "description": "Upload an audio stream for neural STT transcription, agent reasoning, and neural TTS synthesis."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tools Management",
+      "item": [
+        {
+          "name": "List Active Tool Docs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/tools",
+              "host": ["{{base_url}}"],
+              "path": ["tools"]
+            },
+            "description": "Get dynamically generated Markdown documentation of all currently active tools."
+          }
+        },
+        {
+          "name": "List Dynamic Tools",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/tools/dynamic",
+              "host": ["{{base_url}}"],
+              "path": ["tools", "dynamic"]
+            },
+            "description": "List all dynamic HTTP tools registered in runtime."
+          }
+        },
+        {
+          "name": "Create Dynamic Tool",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"currency_exchange\",\n  \"description\": \"Get latest foreign exchange currency rates\",\n  \"url\": \"https://api.frankfurter.app/latest\",\n  \"method\": \"GET\",\n  \"parameters\": {\n    \"type\": \"object\",\n    \"properties\": {\n      \"from\": {\"type\": \"string\"},\n      \"to\": {\"type\": \"string\"}\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/tools/dynamic",
+              "host": ["{{base_url}}"],
+              "path": ["tools", "dynamic"]
+            },
+            "description": "Register a new HTTP REST tool in runtime without restarts."
+          }
+        },
+        {
+          "name": "Delete Dynamic Tool",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/tools/dynamic/currency_exchange",
+              "host": ["{{base_url}}"],
+              "path": ["tools", "dynamic", "currency_exchange"]
+            },
+            "description": "Remove a dynamic tool from the registry."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Human Handoff",
+      "item": [
+        {
+          "name": "List Tickets",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/handoff/tickets?status=open&tenant_id={{tenant_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["handoff", "tickets"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "open"
+                },
+                {
+                  "key": "tenant_id",
+                  "value": "{{tenant_id}}"
+                }
+              ]
+            },
+            "description": "List escalated tickets filtered by status and tenant."
+          }
+        },
+        {
+          "name": "Claim Ticket",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assignee\": \"operator_sarah\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/handoff/tickets/:ticket_id/claim",
+              "host": ["{{base_url}}"],
+              "path": ["handoff", "tickets", ":ticket_id", "claim"],
+              "variable": [
+                {
+                  "key": "ticket_id",
+                  "value": "ticket_123"
+                }
+              ]
+            },
+            "description": "Assign responsibility for an active ticket to an operator."
+          }
+        },
+        {
+          "name": "Reply to Ticket",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"Hello, I am Sarah from customer support. How can I assist you?\",\n  \"assignee\": \"operator_sarah\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/handoff/tickets/:ticket_id/reply",
+              "host": ["{{base_url}}"],
+              "path": ["handoff", "tickets", ":ticket_id", "reply"],
+              "variable": [
+                {
+                  "key": "ticket_id",
+                  "value": "ticket_123"
+                }
+              ]
+            },
+            "description": "Send a reply message directly to the originating channel of the ticket."
+          }
+        },
+        {
+          "name": "Resolve Ticket",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/handoff/tickets/:ticket_id/resolve",
+              "host": ["{{base_url}}"],
+              "path": ["handoff", "tickets", ":ticket_id", "resolve"],
+              "variable": [
+                {
+                  "key": "ticket_id",
+                  "value": "ticket_123"
+                }
+              ]
+            },
+            "description": "Resolve an escalated ticket, restoring automatic agent execution on that session."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Observability & Health",
+      "item": [
+        {
+          "name": "Liveness Probe",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/live",
+              "host": ["{{base_url}}"],
+              "path": ["live"]
+            }
+          }
+        },
+        {
+          "name": "Readiness Probe",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/ready",
+              "host": ["{{base_url}}"],
+              "path": ["ready"]
+            }
+          }
+        },
+        {
+          "name": "Prometheus Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/metrics",
+              "host": ["{{base_url}}"],
+              "path": ["metrics"]
+            }
+          }
+        },
+        {
+          "name": "Business Analytics Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/metrics/business",
+              "host": ["{{base_url}}"],
+              "path": ["metrics", "business"]
+            },
+            "description": "Get high-level business analytics: daily handoffs, tool usage rankings, and tool execution latencies."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Webhooks",
+      "item": [
+        {
+          "name": "Gmail Cloud Pub/Sub",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": {\n    \"data\": \"eyJlbWFpbEFkZHJlc3MiOiAidXNlckBleGFtcGxlLmNvbSIsICJoaXN0b3J5SWQiOiAiMzk0ODk1MCIsICJzdWJqZWN0IjogIkFjY291bnQgdXBkYXRlIHJlcXVlc3QifQ==\",\n    \"messageId\": \"2070443601311540\",\n    \"publishTime\": \"2026-10-13T16:00:00Z\"\n  },\n  \"subscription\": \"projects/my-enterprise/subscriptions/gmail-sub\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/webhooks/gmail",
+              "host": ["{{base_url}}"],
+              "path": ["webhooks", "gmail"]
+            },
+            "description": "Inbound Google Cloud Pub/Sub push notification for Gmail updates."
+          }
+        },
+        {
+          "name": "Slack Events Webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-slack-request-timestamp",
+                "value": "1728835200"
+              },
+              {
+                "key": "x-slack-signature",
+                "value": "v0=dummy_signature_for_testing"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"event_callback\",\n  \"event\": {\n    \"type\": \"message\",\n    \"channel\": \"C12345678\",\n    \"text\": \"Hello AI Agent\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/webhooks/slack",
+              "host": ["{{base_url}}"],
+              "path": ["webhooks", "slack"]
+            }
+          }
+        },
+        {
+          "name": "WhatsApp Cloud Webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-hub-signature-256",
+                "value": "sha256=dummy_signature"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entry\": [\n    {\n      \"changes\": [\n        {\n          \"value\": {\n            \"metadata\": {\"phone_number_id\": \"10987654321\"},\n            \"messages\": [\n              {\n                \"from\": \"+15551234567\",\n                \"text\": {\"body\": \"Need help with my account\"}\n              }\n            ]\n          }\n        }\n      ]\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/webhooks/whatsapp",
+              "host": ["{{base_url}}"],
+              "path": ["webhooks", "whatsapp"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

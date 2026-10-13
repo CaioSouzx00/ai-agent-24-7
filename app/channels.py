@@ -46,10 +46,29 @@ async def send_whatsapp(
     resp.raise_for_status()
 
 
+async def send_gmail(
+    to: str,
+    subject: str,
+    text: str,
+    transport: httpx.AsyncBaseTransport | None = None,
+) -> None:
+    from app.tools.google import GmailTool
+
+    result = await GmailTool(transport=transport).run(
+        action="send_message",
+        to=to,
+        subject=subject,
+        body=text,
+    )
+    if result.startswith("error"):
+        raise RuntimeError(result)
+
+
 @dataclass
 class Senders:
     slack: Callable[[str, str], Awaitable[None]] = send_slack
     whatsapp: Callable[[str, str, str], Awaitable[None]] = send_whatsapp
+    gmail: Callable[[str, str, str], Awaitable[None]] = send_gmail
 
 
 def get_senders(state) -> Senders:

@@ -1,0 +1,183 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-10-13T16:40:00.000Z",
+  "__export_source": "insomnia.desktop.app:v8.0.0",
+  "resources": [
+    {
+      "_id": "wrk_ai_agent_24_7",
+      "_type": "workspace",
+      "name": "AI Agent 24/7 API Workspace",
+      "description": "Enterprise API collection for AI Agent 24/7 platform",
+      "scope": "collection"
+    },
+    {
+      "_id": "env_ai_agent_default",
+      "_type": "environment",
+      "parentId": "wrk_ai_agent_24_7",
+      "name": "Local Development",
+      "data": {
+        "base_url": "http://localhost:8080",
+        "api_key": "dev-api-key",
+        "tenant_id": "default"
+      }
+    },
+    {
+      "_id": "fld_chat",
+      "_type": "request_group",
+      "parentId": "wrk_ai_agent_24_7",
+      "name": "Chat & Voice"
+    },
+    {
+      "_id": "req_chat_post",
+      "_type": "request",
+      "parentId": "fld_chat",
+      "name": "Chat Turn (REST)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/chat",
+      "headers": [
+        {"name": "Content-Type", "value": "application/json"},
+        {"name": "X-API-Key", "value": "{{ _.api_key }}"},
+        {"name": "X-Tenant-ID", "value": "{{ _.tenant_id }}"}
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"session_id\": \"sess_demo_001\",\n  \"message\": \"What tools are currently available?\",\n  \"tenant_id\": \"{{ _.tenant_id }}\"\n}"
+      }
+    },
+    {
+      "_id": "fld_tools",
+      "_type": "request_group",
+      "parentId": "wrk_ai_agent_24_7",
+      "name": "Tools Management"
+    },
+    {
+      "_id": "req_tools_docs",
+      "_type": "request",
+      "parentId": "fld_tools",
+      "name": "Get Tool Docs",
+      "method": "GET",
+      "url": "{{ _.base_url }}/tools"
+    },
+    {
+      "_id": "req_tools_dynamic_list",
+      "_type": "request",
+      "parentId": "fld_tools",
+      "name": "List Dynamic Tools",
+      "method": "GET",
+      "url": "{{ _.base_url }}/tools/dynamic",
+      "headers": [
+        {"name": "X-API-Key", "value": "{{ _.api_key }}"}
+      ]
+    },
+    {
+      "_id": "req_tools_dynamic_create",
+      "_type": "request",
+      "parentId": "fld_tools",
+      "name": "Create Dynamic Tool",
+      "method": "POST",
+      "url": "{{ _.base_url }}/tools/dynamic",
+      "headers": [
+        {"name": "Content-Type", "value": "application/json"},
+        {"name": "X-API-Key", "value": "{{ _.api_key }}"}
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"currency_rates\",\n  \"description\": \"Real-time foreign exchange currency rates\",\n  \"url\": \"https://api.frankfurter.app/latest\",\n  \"method\": \"GET\"\n}"
+      }
+    },
+    {
+      "_id": "fld_handoff",
+      "_type": "request_group",
+      "parentId": "wrk_ai_agent_24_7",
+      "name": "Human Handoff"
+    },
+    {
+      "_id": "req_handoff_tickets",
+      "_type": "request",
+      "parentId": "fld_handoff",
+      "name": "List Tickets",
+      "method": "GET",
+      "url": "{{ _.base_url }}/handoff/tickets?status=open&tenant_id={{ _.tenant_id }}",
+      "headers": [
+        {"name": "X-API-Key", "value": "{{ _.api_key }}"},
+        {"name": "X-Tenant-ID", "value": "{{ _.tenant_id }}"}
+      ]
+    },
+    {
+      "_id": "req_handoff_claim",
+      "_type": "request",
+      "parentId": "fld_handoff",
+      "name": "Claim Ticket",
+      "method": "POST",
+      "url": "{{ _.base_url }}/handoff/tickets/ticket_123/claim",
+      "headers": [
+        {"name": "Content-Type", "value": "application/json"},
+        {"name": "X-API-Key", "value": "{{ _.api_key }}"}
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"assignee\": \"operator_sarah\"\n}"
+      }
+    },
+    {
+      "_id": "req_handoff_reply",
+      "_type": "request",
+      "parentId": "fld_handoff",
+      "name": "Reply to Ticket",
+      "method": "POST",
+      "url": "{{ _.base_url }}/handoff/tickets/ticket_123/reply",
+      "headers": [
+        {"name": "Content-Type", "value": "application/json"},
+        {"name": "X-API-Key", "value": "{{ _.api_key }}"}
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"text\": \"Hello, how can I assist you with your account?\",\n  \"assignee\": \"operator_sarah\"\n}"
+      }
+    },
+    {
+      "_id": "fld_telemetry",
+      "_type": "request_group",
+      "parentId": "wrk_ai_agent_24_7",
+      "name": "Observability & Telemetry"
+    },
+    {
+      "_id": "req_metrics_prom",
+      "_type": "request",
+      "parentId": "fld_telemetry",
+      "name": "Prometheus Metrics",
+      "method": "GET",
+      "url": "{{ _.base_url }}/metrics"
+    },
+    {
+      "_id": "req_metrics_business",
+      "_type": "request",
+      "parentId": "fld_telemetry",
+      "name": "Business Analytics",
+      "method": "GET",
+      "url": "{{ _.base_url }}/metrics/business"
+    },
+    {
+      "_id": "fld_webhooks",
+      "_type": "request_group",
+      "parentId": "wrk_ai_agent_24_7",
+      "name": "Webhooks"
+    },
+    {
+      "_id": "req_webhook_gmail",
+      "_type": "request",
+      "parentId": "fld_webhooks",
+      "name": "Gmail Cloud Pub/Sub",
+      "method": "POST",
+      "url": "{{ _.base_url }}/webhooks/gmail",
+      "headers": [
+        {"name": "Content-Type", "value": "application/json"}
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"message\": {\n    \"data\": \"eyJlbWFpbEFkZHJlc3MiOiAidXNlckBleGFtcGxlLmNvbSIsICJoaXN0b3J5SWQiOiAiMzk0ODk1MCJ9\",\n    \"messageId\": \"2070443601311540\"\n  }\n}"
+      }
+    }
+  ]
+}

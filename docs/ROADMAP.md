@@ -56,6 +56,9 @@ Legenda de Status:
 | 4.4 Webhook WhatsApp / Meta | Endpoint de webhook com handshake de verificação e validação criptográfica de payload | `[Concluido]` |
 | 4.5 Mecanismos de Autenticação | Suporte dual a tokens Bearer JWT (HS256) e API Keys estáticas, com modo estrito de produção | `[Concluido]` |
 | 4.6 Controle de Vazão (Rate Limiting) | Middleware com algoritmo de janela deslizante em Redis e fallback local, emitindo cabeçalhos padrão IETF | `[Concluido]` |
+| 4.7 Webhook Gmail Pub/Sub | Notificações push do Google Cloud Pub/Sub para processamento de emails recebidos e réplicas | `[Concluido]` |
+| 4.8 Isolamento Multi-Tenancy | Isolamento de sessões, memória vetorial pgvector e tickets por `tenant_id` | `[Concluido]` |
+| 4.9 Métricas de Negócio | Endpoint `/metrics/business`, telemetria de latência por ferramenta e contadores de transbordo | `[Concluido]` |
 
 ### Fase 5: Voz, Multimídia e Internacionalização
 | Módulo | Descrição | Status |
