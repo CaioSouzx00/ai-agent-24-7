@@ -1,612 +1,537 @@
-# 🤖 AI Agent 24/7
+# AI Agent 24/7
 
-> **Agente de Inteligência Artificial autônomo, robusto e escalável para atendimento, execução de tarefas e fluxos complexos 24 horas por dia, 7 dias por semana.**  
-> Alimentado por modelos locais via **NVIDIA NIM** (ou APIs em nuvem), com orquestração em grafo (**LangGraph**), memória em dois níveis (**Redis + pgvector**), suporte multilíngue automático, voz (**STT + TTS**), browser headless (**Playwright**), auto-criação de ferramentas em runtime, observabilidade total (**Prometheus + Grafana + Dashboard Web nativo**), rate limiting e transbordo humano com painel dedicado (**Human Handoff**).
-
----
-
-## 📑 Sumário
-
-- [🌟 O que é este projeto? (A Analogia da Vida Real)](#-o-que-é-este-projeto-a-analogia-da-vida-real)
-- [🧩 Glossário: Desmistificando Termos e Siglas](#-glossário-desmistificando-termos-e-siglas)
-- [🏛️ Arquitetura do Sistema](#️-arquitetura-do-sistema)
-- [🔄 Fluxo de Decisão do Agente (LangGraph)](#-fluxo-de-decisão-do-agente-langgraph)
-- [✨ Funcionalidades em Destaque](#-funcionalidades-em-destaque)
-  - [🌍 Suporte Multilíngue Avançado](#-suporte-multilíngue-avançado)
-  - [🎙️ Canal de Voz Completo (STT + TTS)](#️-canal-de-voz-completo-stt--tts)
-  - [🎭 Headless Browser Real (Playwright)](#-headless-browser-real-playwright)
-  - [⚡ Auto-Criação de Ferramentas em Runtime](#-auto-criação-de-ferramentas-em-runtime)
-  - [⏱️ Rate Limiting por Usuário / API Key / Sessão](#️-rate-limiting-por-usuário--api-key--sessão)
-  - [📊 Observabilidade: Dashboard Web & Grafana Stack](#-observabilidade-dashboard-web--grafana-stack)
-- [🧠 Sistema de Memória em Dois Níveis](#-sistema-de-memória-em-dois-níveis)
-- [👥 Transbordo Humano & Console de Atendimento](#-transbordo-humano--console-de-atendimento)
-- [🛡️ Segurança, Produção & Secrets Management](#️-segurança-produção--secrets-management)
-- [🛠️ Ferramentas Suportadas (Tool Calling)](#️-ferramentas-suportadas-tool-calling)
-- [🔌 Canais de Comunicação Suportados](#-canais-de-comunicação-suportados)
-- [🚀 Como Instalar e Rodar](#-como-instalar-e-rodar)
-  - [Opção 1: Com GPU Local (NVIDIA NIM via Docker)](#opção-1-com-gpu-local-nvidia-nim-via-docker)
-  - [Opção 2: Sem GPU (API da NVIDIA na Nuvem)](#opção-2-sem-gpu-api-da-nvidia-na-nuvem)
-  - [Iniciando o Servidor do Agente](#iniciando-o-servidor-do-agente)
-  - [Subindo a Stack de Monitoramento (Grafana + Prometheus)](#subindo-a-stack-de-monitoramento-grafana--prometheus)
-- [🧪 Testes, Validação e Demos](#-testes-validação-e-demos)
-- [📡 Principais Endpoints da API](#-principais-endpoints-da-api)
-- [📁 Estrutura do Código](#-estrutura-do-código)
-- [🗺️ Status e Próximos Passos (Roadmap)](#️-status-e-próximos-passos-roadmap)
+Plataforma autônoma de agentes de inteligência artificial para atendimento conversacional, orquestração de processos e execução segura de ferramentas em ambientes de missão crítica.
 
 ---
 
-## 🌟 O que é este projeto? (A Analogia da Vida Real)
+## Sumário
 
-Para entender facilmente como este agente funciona, imagine uma **Central de Atendimento e Operações Corporativas de Alto Nível**:
-
-```
- 📞 Cliente Fala ou Digita ➡️  🏢 Recepcionista (FastAPI + Rate Limit + Auth)
-                               ↳ Valida permissões, rate limits e assinaturas HMAC
-                                     ⬇️
-                            🧠 Cérebro do Atendente (LangGraph + NVIDIA NIM)
-                               ↳ Detecta idioma, contexto e criticidade da mensagem
-                                     ⬇️
-   ┌─────────────────────────────────┴─────────────────────────────────┐
-   │                                                                   │
-   ▼ CASO CRÍTICO                                                      ▼ CASO ROTINEIRO
-🚨 Cliente bravo ou pedido sensível                  📚 Consulta o histórico da sessão (Redis)
-   (ex: "Quero meu reembolso!")                      🔎 Pesquisa memórias antigas (pgvector)
-   │                                                 🛠️ Navega na web com JS (Playwright)
-   ▼                                                 ⚡ Cria novas tools dinamicamente (Runtime)
-👨‍💼 Toca o alarme e transfere na hora                 💬 Responde no idioma do cliente (i18n)
-   para um atendente humano (Human Handoff)          🎙️ Converte texto para áudio realista (TTS)
-   pelo Console Web dedicado!                        │
-                                                     ▼
-                                                     ✅ Cliente atendido com excelência 24/7!
-```
-
-1. **A Recepcionista Atenta (`FastAPI` + `RateLimiter`):** Recebe clientes que chegam por vários canais (site, WhatsApp, Slack, Voz). Controla volume com taxa de requisições por segundo e valida credenciais e assinaturas digitais HMAC.
-2. **O Ouvido Multilíngue (`i18n`):** Detecta se o cliente está falando em Português, Inglês, Espanhol, Francês ou Alemão e responde com precisão e consistência no mesmo idioma.
-3. **O Histórico Imediato (`Redis`):** Guarda a memória da conversa atual com expiração automática (TTL).
-4. **A Biblioteca Permanente (`pgvector`):** Guarda a memória semântica de longo prazo por busca vetorial.
-5. **A Oficina de Ferramentas (`Playwright` + `Dynamic Tools`):** O agente pesquisa na web, navega em páginas interativas com cliques e preenchimento de formulários e é capaz de **gerar novas ferramentas para si mesmo** em tempo de execução.
-6. **A Voz do Agente (`Whisper STT` + `TTS`):** Permite receber áudio de mensagens de voz e devolver respostas faladas naturais em base64.
-7. **O Transbordo Humano (`Human Handoff`):** Quando necessário, o robô silencia, abre um chamado e notifica a equipe com link direto para o **Console Web**.
-8. **A Torre de Controle (`Dashboard Web` + `Grafana`):** Acompanhamento em tempo real de latência, vazão, tickets ativos e execução de ferramentas.
+- [1. Visão Geral](#1-visão-geral)
+- [2. Arquitetura do Sistema](#2-arquitetura-do-sistema)
+- [3. Máquina de Estados e Grafo de Decisão (LangGraph)](#3-máquina-de-estados-e-grafo-de-decisão-langgraph)
+- [4. Módulos e Recursos Centrais](#4-módulos-e-recursos-centrais)
+  - [4.1 Processamento de Voz em Tempo Real (STT + TTS)](#41-processamento-de-voz-em-tempo-real-stt--tts)
+  - [4.2 Automação de Navegador Headless (Playwright)](#42-automação-de-navegador-headless-playwright)
+  - [4.3 Síntese Dinâmica de Ferramentas em Runtime](#43-síntese-dinâmica-de-ferramentas-em-runtime)
+  - [4.4 Detecção Automática de Idioma e Internacionalização](#44-detecção-automática-de-idioma-e-internacionalização)
+  - [4.5 Controle de Vazão e Rate Limiting](#45-controle-de-vazão-e-rate-limiting)
+  - [4.6 Arquitetura de Memória em Dois Níveis](#46-arquitetura-de-memória-em-dois-níveis)
+  - [4.7 Protocolo de Transbordo Humano (Human Handoff)](#47-protocolo-de-transbordo-humano-human-handoff)
+- [5. Segurança e Proteção de Infraestrutura](#5-segurança-e-proteção-de-infraestrutura)
+- [6. Observabilidade e Telemetria](#6-observabilidade-e-telemetria)
+- [7. Catálogo de Ferramentas (Tool Calling)](#7-catálogo-de-ferramentas-tool-calling)
+- [8. Canais de Integração Suportados](#8-canais-de-integração-suportados)
+- [9. Instalação e Execução](#9-instalação-e-execução)
+  - [9.1 Pré-requisitos](#91-pré-requisitos)
+  - [9.2 Execução Local com Python](#92-execução-local-com-python)
+  - [9.3 Execução com Docker Compose](#93-execução-com-docker-compose)
+  - [9.4 Stack de Monitoramento (Grafana + Prometheus)](#94-stack-de-monitoramento-grafana--prometheus)
+- [10. Especificação da API REST e WebSockets](#10-especificação-da-api-rest-e-websockets)
+- [11. Suíte de Testes e Qualidade](#11-suíte-de-testes-e-qualidade)
+- [12. Estrutura do Repositório](#12-estrutura-do-repositório)
+- [13. Licença](#13-licença)
 
 ---
 
-## 🧩 Glossário: Desmistificando Termos e Siglas
+## 1. Visão Geral
 
-| Sigla / Termo | Nome Completo | O que significa na prática? |
-| :--- | :--- | :--- |
-| **LLM** | *Large Language Model* | O "cérebro" de IA treinado para entender contexto e raciocinar (ex: Llama 3.1 8B Instruct). |
-| **NIM** | *NVIDIA Inference Microservice* | Contêiner otimizado da NVIDIA para rodar modelos de IA com alto rendimento na GPU. |
-| **LangGraph** | *LangChain State Graph* | Orquestrador de fluxo em grafo cíclico com nós de decisão, memória e chamadas de ferramentas. |
-| **STT / TTS** | *Speech-To-Text / Text-To-Speech* | Transcrição de áudio para texto e sintetização de texto para áudio falado. |
-| **Playwright** | *Headless Browser Automation* | Navegador real sem interface gráfica que renderiza JavaScript, clica em botões e preenche formulários. |
-| **Dynamic Tools**| *Auto-Criação de Ferramentas* | Habilidade do agente de registrar endpoints de APIs externas como novas ferramentas em runtime. |
-| **Rate Limiting**| *Limitador de Taxa de Requisições*| Proteção que impede abusos ou sobrecarga limitando requisições por API key, sessão ou IP. |
-| **pgvector** | *PostgreSQL Vector Extension* | Extensão do Postgres que realiza buscas semânticas por proximidade de vetores (*embeddings*). |
-| **Handoff** | *Transbordo Humano* | Transferência de controle da conversa do robô para um operador humano. |
-| **HMAC** | *Hash-based Message Auth Code* | Validação criptográfica de autenticidade das mensagens do Slack e WhatsApp. |
-| **SSRF** | *Server-Side Request Forgery* | Tentativa de fazer o servidor acessar redes internas. O agente possui proteção ativa contra isso. |
+O **AI Agent 24/7** é uma solução de nível corporativo projetada para operar continuamente com alta disponibilidade, tolerância a falhas e isolamento de contexto. O sistema combina inferência local de modelos de linguagem (LLMs) acelerados via **NVIDIA NIM** com orquestração determinística baseada em grafos direcionados acíclicos e cíclicos (**LangGraph**).
+
+### Diferenciais Operacionais
+
+- **Zero Vendor Lock-in:** Compatível com execução on-premises via contêineres NVIDIA NIM em GPUs locais ou com provedores compatíveis com a especificação OpenAI.
+- **Isolamento de Segurança:** Prevenção ativa contra vulnerabilidades SSRF (*Server-Side Request Forgery*), validação criptográfica de webhooks e gestão de credenciais via segredos montados no sistema de arquivos.
+- **Resiliência Graciosa:** Degradação assistida em caso de falha de dependências externas (como Redis ou PostgreSQL), mantendo o atendimento ativo por meio de estruturas em memória volátil com alerta de saúde.
+- **Intervenção Humana Contínua:** Mecanismo integrado de escalação operacional com silenciamento automático do agente, fila transacional de chamados e console administrativo em tempo real.
 
 ---
 
-## 🏛️ Arquitetura do Sistema
+## 2. Arquitetura do Sistema
+
+O fluxo de dados entre os componentes do sistema é estruturado em camadas desacopladas:
 
 ```mermaid
 flowchart TB
-    subgraph CANAIS["📱 Canais de Entrada & Saída"]
-        C1["🌐 REST API (/chat)"]
-        C2["⚡ WebSocket (/ws/{session})"]
-        C3["🎙️ Canal de Voz (/voice/chat)"]
-        C4["💬 Slack (Webhooks + Bot)"]
-        C5["📲 WhatsApp Cloud API"]
+    subgraph INGRESS["Camada de Entrada (Ingress)"]
+        direction TB
+        C_REST["REST API (/chat)"]
+        C_WS["WebSocket (/ws/{session})"]
+        C_VOICE["Audio Stream (/voice/chat)"]
+        C_SLACK["Slack Webhook"]
+        C_WA["WhatsApp Cloud API"]
     end
 
-    subgraph GATEWAY["🛡️ Gateway de Segurança & Controle (FastAPI)"]
-        AUTH["Autenticação API Key / JWT\n+ Validação HMAC (Slack/Meta)"]
-        RATELIMIT["Rate Limiter (Sliding Window)\n(Por API Key, Sessão ou IP)"]
-        HEALTH["Probes (/live, /ready)\n+ Métricas Prometheus (/metrics)"]
-        DASH["🖥️ Dashboard Web (/dashboard)"]
+    subgraph GATEWAY["API Gateway & Camada de Controle (FastAPI)"]
+        direction TB
+        AUTH["Autenticação (API Key / JWT)"]
+        HMAC["Validação de Assinatura HMAC"]
+        RATELIMIT["Rate Limiter (Sliding Window)"]
+        PROBES["Probes de Saúde (/live, /ready)"]
+        METRICS_EP["Exportador de Métricas (/metrics)"]
+        DASH_EP["Console de Operações (/dashboard)"]
     end
 
-    subgraph ENGINE["🧠 Núcleo de Decisão (LangGraph)"]
-        I18N["Detecção de Idioma (i18n)\n(pt, en, es, fr, de, it)"]
-        CLASSIFY["Classificador de Intenção\n(Sensível vs. Geral)"]
-        RETRIEVE["Recuperador de Memória"]
-        THINK["Módulo de Raciocínio (LLM)"]
-        EXEC["Executor de Ferramentas"]
-        SAVE["Persistência do Turno"]
+    subgraph CORE["Motor de Decisão (LangGraph Engine)"]
+        direction TB
+        I18N["Analisador Heurístico de Idioma"]
+        INTENT["Classificador de Intenção e Criticidade"]
+        MEM_RETRIEVE["Recuperador Semântico"]
+        LLM_NODE["Raciocínio e Geração (NVIDIA NIM)"]
+        TOOL_EXEC["Executor Seguro de Ferramentas"]
+        PERSIST["Persistência de Turno"]
     end
 
-    subgraph MEMORY["💾 Armazenamento & Memória"]
-        REDIS[("🔴 Redis\nSessões Ativas (TTL 24h)")]
-        PGVEC[("🐘 PostgreSQL + pgvector\nMemória Semântica Permanente")]
+    subgraph STORAGE["Camada de Armazenamento"]
+        direction TB
+        REDIS[("Redis\nSessões de Curto Prazo")]
+        PGVEC[("PostgreSQL + pgvector\nMemória Semântica Permanente")]
+        TICKETS[("Ticket Store\nFila de Transbordo")]
     end
 
-    subgraph MODELS["⚡ Modelos de IA & Áudio"]
-        NIM["🟢 NVIDIA NIM Local / Nuvem\n(Llama 3.1 8B Instruct)"]
-        EMBED["🟢 NVIDIA Embeddings\n(nv-embedqa-e5-v5)"]
-        VOICE["🎙️ STT Whisper + TTS Síntese"]
+    subgraph EXTERNAL["Serviços Externos & Ferramentas"]
+        direction TB
+        PLAYWRIGHT["Playwright Headless Browser"]
+        DYNAMIC["Motor de Ferramentas Dinâmicas"]
+        INTEGRATIONS["Google APIs, GitHub, Slack"]
+        WHISPER["API de Transcrição e Síntese de Voz"]
     end
 
-    subgraph HANDOFF_SYSTEM["👥 Sistema de Transbordo Humano"]
-        TICKETS[("Fila de Chamados\n(Redis/Memory TicketStore)")]
-        ALERT["🔔 Alerta Webhook (Slack/Teams)"]
-        CONSOLE["🖥️ Console Web do Atendente\n(/handoff/ui)"]
-    end
+    INGRESS --> AUTH
+    AUTH --> HMAC
+    HMAC --> RATELIMIT
+    RATELIMIT --> CORE
 
-    subgraph TOOLS["🛠️ Ferramentas & Integrações"]
-        T_BROWSER["🎭 Playwright Headless Browser"]
-        T_DYNAMIC["⚡ Auto-Criação de Tools (Runtime)"]
-        T_WEB["🌐 Busca DuckDuckGo & Web Browse"]
-        T_GOOGLE["📧 Gmail & 📅 Google Calendar"]
-        T_GITHUB["🐙 GitHub Issues & Repos"]
-        T_VISION["👁️ Visão Multimodal (Llama 3.2 Vision)"]
-    end
-
-    %% Conexões
-    CANAIS --> AUTH
-    AUTH --> RATELIMIT
-    RATELIMIT --> ENGINE
-    ENGINE --> I18N
-    ENGINE --> REDIS
-    ENGINE --> PGVEC
-    ENGINE --> MODELS
-    ENGINE --> TOOLS
-    
-    CLASSIFY -.->|Caso Sensível Detectado| TICKETS
-    TICKETS --> ALERT
-    TICKETS <--> CONSOLE
+    CORE --> STORAGE
+    CORE --> EXTERNAL
+    CORE -.-> TICKETS
 ```
 
 ---
 
-## 🔄 Fluxo de Decisão do Agente (LangGraph)
+## 3. Máquina de Estados e Grafo de Decisão (LangGraph)
+
+O fluxo conversacional não segue sequências lineares rígidas. Ele é implementado como uma máquina de estados finita que suporta iterações cíclicas controladas para execução de ferramentas (*tool calling*):
 
 ```mermaid
 stateDiagram-v2
-    [*] --> ClassificarIntencao: Mensagem recebida
+    [*] --> ClassificarIntencao: Mensagem Recebida
 
     state ClassificarIntencao {
-        description: Verifica se há chamado aberto ou palavras-chave críticas
+        description: Avalia existência de ticket ativo ou vocabulário crítico
     }
 
-    ClassificarIntencao --> Silencioso: Atendente humano está conversando (Pausado)
-    ClassificarIntencao --> TransbordoHumano: Detectou palavra sensível (Reembolso, Processo, etc.)
-    ClassificarIntencao --> RecuperarMemoria: Conversa normal
+    ClassificarIntencao --> SessaoPausada: Ticket Ativo Atribuído a Operador Humano
+    ClassificarIntencao --> TransbordoHumano: Violação de Criticidade Detectada
+    ClassificarIntencao --> RecuperarMemoria: Conversa Operacional Padrão
+
+    state SessaoPausada {
+        description: Registra mensagem na sessão sem disparar inferência do modelo
+    }
+    SessaoPausada --> [*]
 
     state TransbordoHumano {
-        description: Cria Ticket, Notifica Slack, Pausa Bot e responde no idioma correto
+        description: Emite chamado, dispara webhook corporativo e pausa sessão
     }
-    TransbordoHumano --> SalvarTurno
-
-    state Silencioso {
-        description: Grava no histórico sem responder (respeita o operador humano)
-    }
-    Silencioso --> [*]
+    TransbordoHumano --> PersistirTurno
 
     state RecuperarMemoria {
-        description: Busca memórias no Postgres (pgvector)
+        description: Executa busca por similaridade de cosseno no pgvector
     }
     RecuperarMemoria --> PrepararContexto
 
     state PrepararContexto {
-        description: Detecta idioma (pt/en/es/...) e formata prompt com instruções consistentes
+        description: Detecta idioma e monta mensagens do sistema com contexto prévio
     }
-    PrepararContexto --> PensarComLLM
+    PrepararContexto --> InferirLLM
 
-    state PensarComLLM {
-        description: O modelo decide entre responder ou acionar ferramentas
+    state InferirLLM {
+        description: Executa inferência via NVIDIA NIM com catálogo de schemas
     }
 
-    PensarComLLM --> ExecutarFerramentas: Solicitou ferramenta (Tool Call)
-    PensarComLLM --> SalvarTurno: Resposta final pronta
+    InferirLLM --> ExecutarFerramentas: Tool Call Requisitado (rounds <= 5)
+    InferirLLM --> PersistirTurno: Resposta Conclusiva Gerada
 
     state ExecutarFerramentas {
-        description: Roda Playwright, Dynamic Tools, GitHub, Google ou Busca Web
+        description: Despacha chamada com validação anti-SSRF e limites de saída
     }
-    ExecutarFerramentas --> PensarComLLM: Retorna resultado ao modelo (até 5 iterações)
+    ExecutarFerramentas --> InferirLLM: Retorna saída estruturada da ferramenta
 
-    state SalvarTurno {
-        description: Grava turno no Redis e indexa no pgvector
+    state PersistirTurno {
+        description: Atualiza buffer no Redis e indexa memória no PostgreSQL
     }
-    SalvarTurno --> [*]: Resposta entregue ao usuário
+    PersistirTurno --> [*]: Resposta Transmitida ao Canal de Origem
 ```
 
 ---
 
-## ✨ Funcionalidades em Destaque
+## 4. Módulos e Recursos Centrais
 
-### 🌍 Suporte Multilíngue Avançado
-- **Detecção de Idioma em Tempo Real:** O módulo [`app/i18n.py`](app/i18n.py) detecta automaticamente o idioma da mensagem do usuário (`pt`, `en`, `es`, `fr`, `de`, `it`) de forma determinística e com latência zero.
-- **Respostas Consistentes:** O modelo é dinamicamente instruído no system prompt a manter a comunicação no idioma original do usuário.
-- **Mensagens de Sistema Localizadas:** Mensagens padrão de erro, rate limiting e transbordo humano são respondidas no idioma de origem.
+### 4.1 Processamento de Voz em Tempo Real (STT + TTS)
 
-### 🎙️ Canal de Voz Completo (STT + TTS)
-- **Speech-To-Text (STT):** Endpoint [`POST /voice/chat`](app/main.py) que recebe arquivos de áudio multipart (`.mp3`, `.wav`, `.ogg`, `.m4a`) e transcreve usando a API Whisper/NVIDIA.
-- **Orquestração de Áudio:** O áudio transcrito é processado através do grafo LangGraph com histórico de sessão e ferramentas, gerando a resposta e convertendo-a em áudio sintetizado em base64 via Text-To-Speech (TTS).
+O pipeline de voz implementado em [`app/voice.py`](app/voice.py) permite comunicação oral bidirecional:
+- **Speech-to-Text (STT):** O endpoint `POST /voice/chat` aceita fluxos de áudio multipart (`audio/mpeg`, `audio/wav`, `audio/ogg`). Os bytes são transmitidos para transcrição baseada no Whisper.
+- **Processamento de Diálogo:** A transcrição é submetida ao grafo do agente, preservando histórico de contexto, memória de longo prazo e acesso a ferramentas.
+- **Text-to-Speech (TTS):** A resposta textual gerada pelo modelo é convertida em áudio digital via síntese neural e codificada em Base64 na resposta JSON, permitindo reprodução direta em clientes móveis ou navegadores.
 
-### 🎭 Headless Browser Real (Playwright)
-- Substitui/complementa leitores HTML estáticos pela ferramenta [`playwright_browser`](app/tools/browser.py).
-- Renderiza Single Page Applications (SPAs) modernas com JavaScript.
-- Ações suportadas:
-  - `extract_text`: renderiza a página completa e extrai o conteúdo legível.
-  - `click`: clica em seletores CSS ou links.
-  - `fill_form`: preenche campos e submete formulários.
-  - `screenshot`: captura imagem visual da página em base64.
-- **Anti-SSRF Rigoroso:** Bloqueio de hosts privados, endereços de loopback e metadados de nuvem.
+### 4.2 Automação de Navegador Headless (Playwright)
 
-### ⚡ Auto-Criação de Ferramentas em Runtime
-- O agente possui a meta-ferramenta [`create_tool`](app/tools/dynamic.py).
-- **Habilidade de Síntese:** Quando o agente ou um desenvolvedor precisa interagir com uma API externa que não estava prevista no código fonte, pode registrá-la em tempo de execução:
-  - Define nome, descrição, URL de destino, método HTTP (GET/POST), cabeçalhos e JSON Schema de parâmetros.
-  - A ferramenta é registrada instantaneamente no registro central e fica disponível para uso em chamadas subsequentes.
-- **API REST de Gestão:** Endpoints `GET /tools/dynamic`, `POST /tools/dynamic` e `DELETE /tools/dynamic/{name}`.
+A ferramenta [`PlaywrightBrowserTool`](app/tools/browser.py) supera limitações de ferramentas simples de extração HTTP baseadas em regex ou parsers estáticos:
+- **Renderização Dinâmica:** Executa o runtime JavaScript completo em navegadores Chromium em modo headless.
+- **Interações Avançadas:** Suporte a ações de extração de texto estruturado (`extract_text`), clique em elementos interativos (`click`), preenchimento e submissão de formulários (`fill_form`) e captura de telas completas (`screenshot`).
+- **Segurança Anti-SSRF Integrada:** Toda URL submetida é inspecionada pela função `assert_public_url`, que resolve o endereço DNS em tempo de execução e rejeita hosts correspondentes a loopback, redes privadas (RFC 1918) e metadados de provedores de nuvem (`169.254.169.254`).
 
-### ⏱️ Rate Limiting por Usuário / API Key / Sessão
-- Módulo [`app/ratelimit.py`](app/ratelimit.py) implementando algoritmo de janela deslizante (*sliding window*).
-- Priorização de identificadores:
-  1. `api_key`: chave de autenticação individual.
-  2. `session_id`: identificador da conversa do cliente.
-  3. `ip`: endereço IP de origem.
-- Resposta padrão HTTP 429 com cabeçalhos informativos: `Retry-After`, `X-RateLimit-Limit` e `X-RateLimit-Remaining`.
-- Proteção ativa nas rotas `/chat`, `/voice/chat` e no WebSocket `/ws/{session_id}`.
+### 4.3 Síntese Dinâmica de Ferramentas em Runtime
 
-### 📊 Observabilidade: Dashboard Web & Grafana Stack
-- **Dashboard Web Embutido (`GET /dashboard`):** Interface nativa em Dark Slate, moderna e responsiva, com atualização automática a cada 5 segundos exibindo KPIs em tempo real:
-  - Volume de mensagens processadas por canal.
-  - Chamados de transbordo humano ativos.
-  - Ferramentas registradas (Core vs. Dinâmicas).
-  - Bloqueios por taxa de requisições (429).
-  - Snapshot ao vivo do feed Prometheus.
-- **Stack Grafana & Prometheus Provisionada:**
-  - `infra/prometheus/prometheus.yml`: scraping a cada 5s de `/metrics`.
-  - `infra/grafana/provisioning/`: datasource e dashboard pré-configurados automaticamente.
-  - `infra/grafana/dashboards/ai_agent_dashboard.json`: painéis de latência p50/p90/p99, vazão req/s, falhas de tools e chamados abertos.
+O módulo [`app/tools/dynamic.py`](app/tools/dynamic.py) provê uma arquitetura extensível que permite ao próprio agente ou a operadores externos registrar novos endpoints de integração sem reiniciar a aplicação:
+- **Ferramenta `create_tool`:** Permite registrar uma nova API REST informando identificador, descrição operacional, URL pública, método HTTP, cabeçalhos fixos e JSON Schema de parâmetros.
+- **Instanciação Segura:** A ferramenta criada é encapsulada em uma instância de `DynamicHttpTool` e vinculada ao registro global central (`app.tools.base.registry`), tornando-se imediatamente acessível nas rodadas subsequentes de inferência.
+- **Isolamento de Núcleo:** Nomes de ferramentas essenciais do sistema são blindados contra sobrescrita acidental ou maliciosa.
 
----
+### 4.4 Detecção Automática de Idioma e Internacionalização
 
-## 🧠 Sistema de Memória em Dois Níveis
+O módulo [`app/i18n.py`](app/i18n.py) garante comunicação homogênea em cenários globais:
+- **Detecção Determinística:** Algoritmo heurístico baseado em frequência de vocabulário e marcadores diacríticos específicos, sem dependências de modelos pesados, suportando Português (`pt`), Inglês (`en`), Espanhol (`es`), Francês (`fr`), Alemão (`de`) e Italiano (`it`).
+- **Consistência de Resposta:** O grafo injeta a restrição de idioma detectado diretamente no prompt de sistema da sessão, garantindo que o modelo responda no mesmo idioma utilizado pelo cliente.
+- **Mensagens de Sistema Localizadas:** Erros operacionais, notificações de limite de requisição e avisos de transbordo humano possuem traduções pré-computadas em todos os idiomas suportados.
 
-```mermaid
-flowchart LR
-    subgraph CURTO["⏱️ Curto Prazo (Sessão Viva)"]
-        M1["Redis (ou RAM de fallback)"]
-        M1_INFO["• Histórico das últimas 20 mensagens\n• Expiração automática (TTL 24h)\n• Respostas ultrarrápidas"]
-    end
+### 4.5 Controle de Vazão e Rate Limiting
 
-    subgraph LONGO["🏛️ Longo Prazo (Memória Semântica)"]
-        M2["PostgreSQL + pgvector"]
-        M2_INFO["• Embeddings de 1024 dimensões\n• Busca por similaridade de cosseno (<=>)\n• Lembrança de preferências do cliente"]
-    end
+Implementado em [`app/ratelimit.py`](app/ratelimit.py), o limitador de taxa protege os recursos computacionais do agente contra ataques de negação de serviço e consumo excessivo de cotas de inferência:
+- **Algoritmo de Janela Deslizante (Sliding Window):** Utiliza filas de timestamps com descarte automático de períodos expirados e controle de concorrência com travas assíncronas.
+- **Hierarquia de Identificação:** A requisição é associada sequencialmente a:
+  1. Token de API / JWT (`Authorization: Bearer` ou `X-API-Key`);
+  2. Identificador de Sessão (`session_id`);
+  3. Endereço IP de origem (`X-Forwarded-For` ou socket direto).
+- **Conformidade com Padrões HTTP:** Em caso de violação, o sistema retorna status `429 Too Many Requests` acompanhado dos cabeçalhos normativos `Retry-After`, `X-RateLimit-Limit` e `X-RateLimit-Remaining`.
 
-    CLIENTE["👤 Mensagem"] --> CURTO
-    CLIENTE --> LONGO
-```
+### 4.6 Arquitetura de Memória em Dois Níveis
 
-> [!NOTE]
-> **Resiliência Graciosa:** Se o Redis ou o PostgreSQL ficarem indisponíveis, a aplicação faz fallback automático para memória em RAM e reporta status degradado nos endpoints de diagnóstico sem derrubar o serviço.
+O agente utiliza uma estratégia de retenção de contexto projetada para otimizar custo e tempo de resposta:
+
+| Nível | Camada Tecnológica | Estrutura de Dados | Política de Retenção | Finalidade |
+| :--- | :--- | :--- | :--- | :--- |
+| **Curto Prazo** | Redis | Listas indexadas por sessão | TTL de 24 horas (configurável) | Manutenção do histórico imediato das últimas 20 mensagens da conversa ativa. |
+| **Longo Prazo** | PostgreSQL + pgvector | Vetores de 1024 dimensões com índice HNSW | Persistência definitiva | Busca semântica por similaridade de cosseno (`<=>`) para resgatar preferências e fatos históricos. |
+
+Em cenários onde o cluster Redis ou PostgreSQL não estiver disponível, o sistema ativa automaticamente adaptadores em memória RAM (`InMemorySessionStore` e `InMemoryTicketStore`), mantendo o serviço operacional em modo degradado.
+
+### 4.7 Protocolo de Transbordo Humano (Human Handoff)
+
+Quando o classificador de intenção identifica linguagem de insatisfação severa ou termos legais críticos (como processos, estornos ou solicitações explícitas de operadores humanos):
+1. O agente gera um ticket transacional persistido na fila operacional;
+2. Um alerta é encaminhado via webhook corporativo (Slack ou Microsoft Teams) contendo identificador, canal de origem, resumo e link de atendimento;
+3. A sessão é marcada com o estado `paused: true`, silenciando o agente para novas mensagens do usuário naquela sessão;
+4. O operador humano assume o chamado e interage com o cliente diretamente através do Console Web (`/handoff/ui`). Ao concluir, a sessão é reativada.
 
 ---
 
-## 👥 Transbordo Humano & Console de Atendimento
+## 5. Segurança e Proteção de Infraestrutura
 
-Quando um cliente manifesta insatisfação ou necessidade de atendimento humano, o fluxo de transbordo é acionado:
-
-### 1. Gatilhos de Detecção Automática
-O sistema identifica termos críticos em múltiplos idiomas:
-- *reembolso*, *cancelar contrato*, *processo judicial*, *advogado*, *fraude*, *falar com humano*, *atendente*
-- *refund*, *cancel contract*, *lawsuit*, *lawyer*, *fraud*, *talk to a human*, *human agent*
-
-### 2. Ciclo de Atendimento
-1. É gerado um **Ticket** com histórico e motivo.
-2. Alerta com link direto é postado no canal de atendimento do Slack da equipe.
-3. O bot silencia e aguarda a intervenção humana.
-4. O operador humano abre o **Console Web** em `/handoff/ui`.
-
-```mermaid
-sequenceDiagram
-    autonumber
-    actor Cliente
-    participant Bot as 🤖 AI Agent
-    participant Fila as 🎫 Ticket Store
-    participant Slack as 🔔 Slack da Equipe
-    actor Humano as 👨‍💼 Operador Humano
-
-    Cliente->>Bot: "Não gostei, quero meu reembolso agora!"
-    Bot->>Bot: Detecta palavra-chave sensível
-    Bot->>Fila: Cria ticket com histórico completo
-    Bot->>Slack: Alerta com botão para assumir ticket
-    Bot->>Cliente: "Encaminhei sua solicitação para um atendente humano."
-    
-    Humano->>Fila: Acessa /handoff/ui e assume o chamado ("Claim")
-    Cliente->>Bot: "Quanto tempo vai demorar?"
-    Note over Bot: Bot silenciado (sessão pausada)
-    Humano->>Cliente: Responde no painel: "Olá! Já estou cuidando do seu caso."
-    Humano->>Fila: Conclui o atendimento ("Resolve")
-    Note over Bot: Bot retoma o controle com contexto atualizado!
-```
+- **Gestão de Segredos de Produção (`app/secrets.py`):** Resolução transparente de credenciais via volumes Docker Secrets e montagens do Kubernetes (`/run/secrets/<nome>`) ou caminhos de arquivos declarados via variáveis de ambiente (`<VAR>_FILE`). Bloqueia inicializações em produção com credenciais padrão inseguras.
+- **Autenticação Flexível:** Suporte simultâneo a chaves de API estáticas e validação de tokens JWT compatíveis com padrões de mercado (Clerk, Auth0, Okta), aceitando assinaturas simétricas (HS256) e assimétricas com consulta remota de chaves (RS256 via JWKS).
+- **Validação de Webhooks por HMAC SHA-256:**
+  - **Slack:** Verificação da assinatura no cabeçalho `X-Slack-Signature` com rejeição de requisições com diferença temporal superior a 300 segundos (*anti-replay attack*).
+  - **WhatsApp Cloud API:** Validação criptográfica do cabeçalho `X-Hub-Signature-256` utilizando o segredo do aplicativo Meta.
+- **Proteção contra SSRF em Camada de Rede:** Resolução antecipada de nomes de domínio com validação contra redes locais, faixas privadas da RFC 1918 e metadados de instâncias em nuvem antes de qualquer chamada HTTP de ferramentas.
 
 ---
 
-## 🛡️ Segurança, Produção & Secrets Management
+## 6. Observabilidade e Telemetria
 
-- 🔐 **Secrets Management (`app/secrets.py`):**
-  - Resolução segura via Docker Secrets / Kubernetes (`/run/secrets/<nome>`).
-  - Resolução via arquivos externos (`<VAR>_FILE`).
-  - `validate_production_settings`: bloqueia inicialização em produção se tokens default inseguros forem detectados.
-- 🔑 **Autenticação Dupla:** API Key simples ou validação de JWTs (Clerk / Auth0) compatível com HS256 e RS256 JWKS.
-- 🔒 **Validação HMAC SHA-256:** Assinaturas digitais obrigatórias para webhooks do Slack e WhatsApp.
-- 🌐 **Proteção Anti-SSRF:** Bloqueio de requisições internas na navegação web e na criação dinâmica de ferramentas.
-- 🐳 **Docker Compose de Produção (`infra/docker-compose.prod.yml`):**
-  - Isolamento de rede (`agent-internal`).
-  - Limites de recursos (`cpu_limit`, `memory_limit`).
-  - Probes avançadas de `/live` e `/ready`.
-  - Configuração de rotação de logs (`json-file`, max 10m).
+### 6.1 Métricas Prometheus Centralizadas
 
----
+O módulo [`app/metrics.py`](app/metrics.py) expõe telemetria operacional de alta precisão através do endpoint `/metrics`:
 
-## 🛠️ Ferramentas Suportadas (Tool Calling)
+- `agent_requests_total`: Contador total de turnos de conversação particionado pelo canal de entrada (`rest`, `ws`, `voice`, `slack`, `whatsapp`).
+- `agent_request_duration_seconds`: Histograma de latência de processamento do agente por canal, com buckets de 50ms a 10s.
+- `agent_tool_calls_total`: Contador de execuções de ferramentas particionado por nome e status de execução (`success`, `error`).
+- `agent_ratelimit_exceeded_total`: Contador de rejeições por excesso de requisições particionado por tipo de identificador (`api_key`, `session`, `ip`).
+- `agent_tickets_active`: Indicador em tempo real de chamados de transbordo pendentes de resolução humana.
+- `agent_dynamic_tools_total`: Total de ferramentas dinâmicas ativas registradas em runtime.
 
-| Ferramenta | Nome Interno | Descrição |
-| :--- | :--- | :--- |
-| 🎭 **Playwright Browser** | `playwright_browser` | Navegador headless com execução completa de JS, cliques, formulários e screenshots. |
-| ⚡ **Criação de Tools** | `create_tool` | Registra novas ferramentas HTTP em runtime com validação de schema e segurança anti-SSRF. |
-| 🔍 **Busca na Web** | `web_search` | Realiza buscas em tempo real no DuckDuckGo retornando títulos e links. |
-| 🌐 **Navegação Web Simples** | `web_browse` | Baixa páginas web públicas (HTML) e extrai o texto legível. |
-| 💬 **Envio no Slack** | `slack_send_message` | Posta mensagens em canais ou conversas do Slack através da API oficial. |
-| 📧 **Gmail** | `gmail` | Leitura, busca e envio de e-mails via API do Gmail. |
-| 📅 **Google Agenda** | `google_calendar` | Listagem e criação de eventos na agenda via API do Google Calendar. |
-| 🐙 **GitHub** | `github` | Criação, consulta e listagem de Issues e repositórios no GitHub. |
-| 👁️ **Visão Multimodal** | `image_analysis` | Análise multimodal de imagens e documentos via LLM. |
+### 6.2 Console de Operações Web (`/dashboard`)
+
+Interface integrada servida diretamente pela aplicação em [`app/dashboard.py`](app/dashboard.py), construída em HTML5/CSS3 moderno com tema escuro de alto contraste, tipografia técnica e atualização assíncrona periódica a cada 5 segundos:
+- Indicadores numéricos de volume de requisições, chamados abertos, ferramentas ativas e bloqueios por taxa;
+- Inspeção dinâmica do catálogo de ferramentas registradas;
+- Visualizador direto de snapshots de telemetria e links rápidos para Prometheus e Grafana.
+
+### 6.3 Painéis Grafana Pré-Provisionados
+
+O repositório inclui a configuração completa de provisionamento do Grafana em [`infra/grafana/`](infra/grafana/):
+- **Datasource:** Configuração automática conectando ao Prometheus local (`http://prometheus:9090`).
+- **Dashboard "AI Agent 24/7 Operations":** Painel pré-configurado contendo gráficos de vazão por canal, quantis de latência (p50, p90, p95), taxa de sucesso de ferramentas e volumetria de chamados de suporte.
 
 ---
 
-## 🔌 Canais de Comunicação Suportados
+## 7. Catálogo de Ferramentas (Tool Calling)
 
-1. **REST API (`POST /chat`):** Integração padrão com sites, aplicativos e microsserviços.
-2. **WebSocket (`ws://.../ws/{session_id}`):** Comunicação bidirecional contínua em tempo real com rate limit integrado.
-3. **Canal de Voz (`POST /voice/chat`):** Upload de áudio multipart com transcrição, processamento e resposta em áudio falado.
-4. **Slack (`POST /webhooks/slack`):** Atendimento nativo via menções e mensagens diretas em canais da equipe.
-5. **WhatsApp Cloud API (`POST /webhooks/whatsapp`):** Atendimento no WhatsApp com verificação oficial da Meta.
+| Identificador | Classe Implementadora | Parâmetros Principais | Descrição Operacional |
+| :--- | :--- | :--- | :--- |
+| `playwright_browser` | `PlaywrightBrowserTool` | `url`, `action`, `selector`, `text` | Navegação completa com execução de scripts JS, cliques, submissão de formulários e extração de texto. |
+| `create_tool` | `CreateToolTool` | `name`, `description`, `url`, `method`, `parameters` | Sintetiza e registra uma nova ferramenta baseada em endpoint REST em tempo de execução. |
+| `web_search` | `WebSearchTool` | `query`, `max_results` | Executa pesquisa em tempo real no DuckDuckGo retornando títulos, URLs e resumos contextuais. |
+| `web_browse` | `WebBrowseTool` | `url` | Leitura simplificada de documentos HTML públicos com conversão para texto puro e proteção anti-SSRF. |
+| `slack_send_message` | `SlackTool` | `channel`, `text` | Publicação de mensagens em canais ou conversas diretas no workspace do Slack via Bot Token. |
+| `gmail` | `GmailTool` | `action`, `query`, `to`, `subject`, `body` | Consulta, leitura e envio de e-mails corporativos via Google Workspace REST API. |
+| `google_calendar` | `CalendarTool` | `action`, `summary`, `start_time`, `end_time` | Consulta de compromissos e agendamento de eventos no Google Calendar. |
+| `github` | `GitHubTool` | `action`, `repo`, `issue_number`, `title`, `body` | Consulta e abertura de issues e leitura de metadados em repositórios do GitHub. |
+| `image_analysis` | `ImageAnalysisTool` | `image_url`, `prompt` | Análise multimodal de imagens e documentos através de LLMs com visão computacional. |
 
 ---
 
-## 🚀 Como Instalar e Rodar
+## 8. Canais de Integração Suportados
 
-### Pré-requisitos
-- Python 3.11+
+1. **REST API (`POST /chat`):** Canal síncrono padrão para integração com frontends web, microsserviços e aplicações móveis.
+2. **WebSocket (`ws://.../ws/{session_id}`):** Conexão duplex contínua com suporte a streaming de turnos e verificação contínua de cota.
+3. **Canal de Voz (`POST /voice/chat`):** Upload de arquivos de áudio multipart com resposta serializada contendo transcrição textual e áudio sintetizado em Base64.
+4. **Slack App (`POST /webhooks/slack`):** Tratamento de menções (`app_mention`) e mensagens diretas em canais corporativos com suporte a desafios de validação de URL.
+5. **WhatsApp Cloud API (`POST /webhooks/whatsapp`):** Integração com a API oficial da Meta com handshake de validação de token e resposta assíncrona.
+
+---
+
+## 9. Instalação e Execução
+
+### 9.1 Pré-requisitos
+
+- Python 3.11 ou superior
 - Git
-- Docker e Docker Compose
+- Docker Engine e Docker Compose (para execução em contêineres)
+- GPU NVIDIA com suporte a CUDA e NVIDIA Container Toolkit (opcional, para inferência local com NIM)
 
 ---
 
-### Opção 1: Com GPU Local (NVIDIA NIM via Docker)
-
-Se você tem placa de vídeo NVIDIA com drivers e NVIDIA Container Toolkit:
+### 9.2 Execução Local com Python
 
 ```bash
-# 1. Defina sua chave de acesso NGC da NVIDIA
-export NGC_API_KEY="sua-chave-ngc-aqui"
+# 1. Clonar o repositório
+git clone https://github.com/CaioSouzx00/ai-agent-24-7.git
+cd ai-agent-24-7
 
-# 2. Inicie o microserviço NIM com suporte a GPU
-docker compose -f infra/docker-compose.yml --profile gpu up -d nim
+# 2. Configurar o arquivo de variáveis de ambiente
+cp .env.example .env
+
+# 3. Criar e ativar o ambiente virtual isolado
+python -m venv .venv
+
+# No Windows (PowerShell):
+.\.venv\Scripts\Activate.ps1
+
+# No Linux ou macOS:
+source .venv/bin/activate
+
+# 4. Instalar as dependências do projeto com suporte a ferramentas
+pip install -e ".[dev,tools]"
+
+# 5. Instalar os binários do navegador headless do Playwright
+playwright install chromium
+
+# 6. Iniciar a aplicação via Uvicorn
+uvicorn app.main:app --reload --port 8080
 ```
-O servidor do modelo local estará disponível em `http://localhost:8000/v1`.
 
 ---
 
-### Opção 2: Sem GPU (API da NVIDIA na Nuvem)
+### 9.3 Execução com Docker Compose
 
-Você pode usar os modelos hospedados gratuitamente no catálogo da NVIDIA:
+#### Ambiente de Desenvolvimento
+Para inicializar o agente com Redis e PostgreSQL (com extensão pgvector):
 
-1. Obtenha sua chave gratuita em [build.nvidia.com](https://build.nvidia.com).
-2. Configure o arquivo `.env`:
-```env
-LLM_PROVIDER=nim
-NIM_BASE_URL=https://integrate.api.nvidia.com/v1
-NIM_MODEL=meta/llama-3.1-8b-instruct
-NIM_API_KEY=nvapi-...
+```bash
+docker compose -f infra/docker-compose.yml up --build -d
+```
+
+#### Ambiente com Inferência Local via GPU
+Para incluir o contêiner do NVIDIA NIM rodando o modelo localmente na GPU:
+
+```bash
+export NGC_API_KEY="sua-chave-ngc-nvidia"
+docker compose -f infra/docker-compose.yml --profile gpu up -d
+```
+
+#### Ambiente de Produção Hardened
+A stack de produção em [`infra/docker-compose.prod.yml`](infra/docker-compose.prod.yml) inclui limites de CPU/memória, réplicas, isolamento de rede interna e gestão de segredos montados:
+
+```bash
+docker compose -f infra/docker-compose.prod.yml up -d
 ```
 
 ---
 
-### Iniciando o Servidor do Agente
+### 9.4 Stack de Monitoramento (Grafana + Prometheus)
 
-1. **Clone o repositório e configure as variáveis:**
-   ```bash
-   cp .env.example .env
-   ```
-
-2. **Crie e ative o ambiente virtual:**
-   ```bash
-   # Windows (PowerShell)
-   python -m venv .venv
-   .\.venv\Scripts\Activate.ps1
-
-   # Linux / macOS
-   python3 -m venv .venv
-   source .venv/bin/activate
-   ```
-
-3. **Instale as dependências com suporte a ferramentas e navegador:**
-   ```bash
-   pip install -e ".[dev,tools]"
-   playwright install chromium
-   ```
-
-4. **Inicie o servidor:**
-   ```bash
-   uvicorn app.main:app --reload --port 8080
-   ```
-
-5. **Acesse as interfaces visuais no navegador:**
-   - 📊 **Dashboard Operacional:** [http://localhost:8080/dashboard](http://localhost:8080/dashboard)
-   - 👥 **Console de Transbordo Humano:** [http://localhost:8080/handoff/ui](http://localhost:8080/handoff/ui)
-   - 📚 **Documentação Interativa Swagger:** [http://localhost:8080/docs](http://localhost:8080/docs)
-
----
-
-### Subindo a Stack de Monitoramento (Grafana + Prometheus)
-
-Para subir o agente junto com Prometheus e Grafana:
+Para subir o ambiente completo com Prometheus e painel Grafana pré-configurado:
 
 ```bash
 docker compose -f infra/docker-compose.yml --profile monitoring up -d
 ```
-- **Prometheus:** [http://localhost:9090](http://localhost:9090)
-- **Grafana:** [http://localhost:3000](http://localhost:3000) (Login padrão: `admin` / `admin`)
-  - O dashboard **"AI Agent 24/7 - Operations & Quality Dashboard"** é carregado automaticamente!
+
+- **Painel de Operações Web do Agente:** `http://localhost:8080/dashboard`
+- **Console do Atendente Humano:** `http://localhost:8080/handoff/ui`
+- **Servidor Prometheus:** `http://localhost:9090`
+- **Dashboard Grafana:** `http://localhost:3000` (Credenciais padrão: `admin` / `admin`)
+- **Documentação Interativa da API (OpenAPI/Swagger):** `http://localhost:8080/docs`
 
 ---
 
-## 🧪 Testes, Validação e Demos
+## 10. Especificação da API REST e WebSockets
 
-O projeto conta com **122 testes automatizados** e scripts interativos de demonstração:
+| Endpoint | Método | Descrição | Requisitos de Autenticação |
+| :--- | :---: | :--- | :--- |
+| `/health` | `GET` | Verificação simples de liveness do processo. | Pública |
+| `/live` | `GET` | Probe de liveness para orquestradores (Kubernetes/Docker). | Pública |
+| `/ready` | `GET` | Diagnóstico profundo de readiness (LLM, Redis, Postgres e Circuit Breaker). | Pública |
+| `/metrics` | `GET` | Exportação de telemetria no formato Prometheus. | Pública |
+| `/dashboard` | `GET` | Console web operacional com telemetria e catálogo de ferramentas. | Pública |
+| `/tools` | `GET` | Documentação gerada dinamicamente das ferramentas ativas. | Pública |
+| `/chat` | `POST` | Processamento síncrono de mensagens de texto com rate limiting. | API Key ou JWT |
+| `/voice/chat` | `POST` | Processamento de áudio via upload multipart (transcrição + síntese). | API Key ou JWT |
+| `/ws/{session_id}` | `WS` | Canal duplex em tempo real via WebSocket com controle de vazão. | API Key ou JWT |
+| `/tools/dynamic` | `GET` | Listagem dos schemas de todas as ferramentas criadas em runtime. | API Key ou JWT |
+| `/tools/dynamic` | `POST` | Registro de uma nova ferramenta HTTP dinâmica em runtime. | API Key ou JWT |
+| `/tools/dynamic/{name}` | `DELETE` | Desativação e remoção de uma ferramenta dinâmica registrada. | API Key ou JWT |
+| `/handoff/ui` | `GET` | Console web administrativo para operadores humanos. | Pública (Console) |
+| `/handoff/tickets` | `GET` | Listagem paginada de chamados escalados para atendimento humano. | API Key ou JWT |
+| `/handoff/tickets/{id}/claim` | `POST` | Atribuição de responsabilidade por um chamado a um operador. | API Key ou JWT |
+| `/handoff/tickets/{id}/reply` | `POST` | Envio de mensagem do operador humano direcionada ao canal do cliente. | API Key ou JWT |
+| `/handoff/tickets/{id}/resolve` | `POST` | Conclusão do chamado e liberação do agente para reassumir o diálogo. | API Key ou JWT |
+| `/webhooks/slack` | `POST` | Endpoint de recepção de eventos e mensagens do Slack App. | Assinatura HMAC Slack |
+| `/webhooks/whatsapp` | `GET/POST`| Validação de handshake e recepção de mensagens da Meta. | Assinatura HMAC Meta |
+
+---
+
+## 11. Suíte de Testes e Qualidade
+
+O projeto mantém uma política rigorosa de garantia de qualidade de software, auditada por ferramentas de análise estática e cobertura de testes automatizados.
+
+### Execução dos Testes Automatizados
+
+A suíte completa conta com **122 testes unitários e de integração** executados sem dependências externas ativas (utilizando mocks de transporte HTTP e adaptadores em memória):
 
 ```bash
-# Executar toda a suíte de testes unitários e de integração
+# Executar todos os testes com saída verbosa
 pytest -v
 
-# Demo 1: Chat Interativo via Terminal com histórico de sessão
+# Executar medição de cobertura de código
+pytest --cov=app --cov-report=term-missing
+```
+
+### Scripts de Demonstração e Validação
+
+```bash
+# Demonstração interativa de chat via terminal com gerenciamento de sessão
 python scripts/demo_chat.py
 
-# Demo 2: Ciclo Completo de Transbordo Humano Automatizado
+# Demonstração automatizada fim a fim do ciclo de transbordo humano
 python scripts/demo_handoff.py
 
-# Teste de fumaça com LLM real configurado
+# Teste de fumaça contra modelo LLM real configurado em ambiente ativo
 python scripts/smoke_llm.py
 ```
 
-Consulte também [`docs/examples/prompts.md`](docs/examples/prompts.md) para uma biblioteca completa de prompts prontos para cada ferramenta.
+### Conformidade de Estilo e Análise Estática
+
+O pipeline de pré-commit audita formatação e análise estática em conformidade com a PEP 8:
+
+```bash
+pre-commit run --all-files
+```
+
+- **Black:** Padronização uniforme de formatação de código Python.
+- **Ruff:** Linter estático para detecção antecipada de más práticas, variáveis não utilizadas e complexidade ciclomática.
+- **isort:** Organização determinística de importações.
 
 ---
 
-## 📡 Principais Endpoints da API
-
-| Rota | Método | Descrição | Autenticação |
-| :--- | :---: | :--- | :---: |
-| `/health` | `GET` | Liveness check básico do servidor. | Pública |
-| `/live` | `GET` | Probe de liveness para orquestradores (K8s/Docker). | Pública |
-| `/ready` | `GET` | Readiness detalhado (testa LLM, Redis, Postgres e Circuit Breaker). | Pública |
-| `/metrics` | `GET` | Métricas operacionais no padrão Prometheus. | Pública |
-| `/dashboard` | `GET` | Painel visual Dark Mode em tempo real com métricas e ferramentas. | Pública |
-| `/chat` | `POST` | Envio de mensagens em formato REST (com rate limiting). | API Key / JWT |
-| `/voice/chat` | `POST` | Envio de áudio via upload multipart (com transcrição e síntese). | API Key / JWT |
-| `/ws/{session_id}` | `WS` | Conexão de chat bidirecional em tempo real via WebSocket. | API Key / JWT |
-| `/tools` | `GET` | Documentação em Markdown de todas as ferramentas ativas. | Pública |
-| `/tools/dynamic` | `GET/POST` | Listagem e criação dinâmica de novas ferramentas em runtime. | API Key / JWT |
-| `/tools/dynamic/{name}` | `DELETE` | Exclusão de ferramenta dinâmica criada em runtime. | API Key / JWT |
-| `/handoff/ui` | `GET` | Console visual de atendimento para operadores humanos. | Pública |
-| `/handoff/tickets` | `GET` | Listagem de chamados e conversas escaladas. | API Key / JWT |
-| `/handoff/tickets/{id}/reply` | `POST` | Envio de resposta do atendente humano para o canal do cliente. | API Key / JWT |
-| `/handoff/tickets/{id}/resolve`| `POST` | Resolução do chamado liberando o robô para reassumir. | API Key / JWT |
-| `/webhooks/slack` | `POST` | Recebimento de mensagens do Slack com verificação HMAC. | Assinatura Slack |
-| `/webhooks/whatsapp` | `GET/POST` | Webhook oficial do WhatsApp Cloud API com validação Meta. | Assinatura Meta |
-
----
-
-## 📁 Estrutura do Código
+## 12. Estrutura do Repositório
 
 ```
 ai-agent-24-7/
+├── app/                                 # Código-fonte principal da aplicação
+│   ├── agent/                           # Orquestração do agente conversacional
+│   │   ├── graph.py                     # Grafo de estados com LangGraph
+│   │   └── handoff.py                   # Detecção de intenções críticas de transbordo
+│   ├── llm/                             # Camada de abstração de inferência
+│   │   ├── base.py                      # Contratos LLMProvider, ToolCall e LLMResponse
+│   │   └── nim.py                       # Cliente para microsserviços NVIDIA NIM
+│   ├── tools/                           # Ferramentas executáveis pelo agente
+│   │   ├── base.py                      # Registro central e interface BaseTool
+│   │   ├── browser.py                   # Navegador headless Playwright com proteção anti-SSRF
+│   │   ├── dynamic.py                   # Motor de síntese de ferramentas em tempo de execução
+│   │   ├── github.py                    # Integração com GitHub Issues e Repositórios
+│   │   ├── google.py                    # Integração com Gmail e Google Calendar
+│   │   ├── slack.py                     # Publicação de mensagens corporativas no Slack
+│   │   ├── vision.py                    # Análise de imagens multimodais via LLM
+│   │   ├── web.py                       # Mecanismos de busca e leitura web segura
+│   │   └── integrations.py              # Inicializador e registro central das ferramentas
+│   ├── static/                          # Arquivos estáticos e interfaces integradas
+│   │   └── handoff.html                 # Console web do atendente humano
+│   ├── channels.py                      # Roteadores de entrega para WhatsApp e Slack
+│   ├── config.py                        # Centralização de configurações e variáveis de ambiente
+│   ├── dashboard.py                     # Console web de operações e monitoramento
+│   ├── handoff_api.py                   # API REST e controladores de transbordo humano
+│   ├── health.py                        # Verificações de prontidão (readiness) e circuit breaker
+│   ├── i18n.py                          # Detecção heurística de idiomas e mensagens localizadas
+│   ├── main.py                          # Inicialização do FastAPI, rotas e ciclo de vida
+│   ├── memory.py                        # Gestão de sessões no Redis e embeddings no pgvector
+│   ├── metrics.py                       # Definições das métricas de telemetria Prometheus
+│   ├── ratelimit.py                     # Controle de vazão baseado em janela deslizante
+│   ├── secrets.py                       # Resolução segura de segredos montados no SO
+│   ├── security.py                      # Validação de assinaturas HMAC e autenticação JWT
+│   ├── tickets.py                       # Persistência de tickets e disparo de alertas
+│   └── voice.py                         # Pipeline de processamento de áudio (STT + TTS)
 │
-├── app/                        # 🧠 Código-fonte principal da aplicação
-│   ├── agent/                  # Orquestração do agente
-│   │   ├── graph.py            # Grafo de estados LangGraph (i18n, think, tools, handoff)
-│   │   └── handoff.py          # Regras e palavras-chave sensíveis
-│   ├── llm/                    # Camada de abstração de modelos
-│   │   ├── base.py             # Interfaces LLMProvider, ToolCall e LLMResponse
-│   │   └── nim.py              # Cliente para NVIDIA NIM (OpenAI-compatible)
-│   ├── tools/                  # Ferramentas acionadas pelo agente
-│   │   ├── base.py             # Registro central e interface BaseTool
-│   │   ├── browser.py          # Playwright headless browser com cliques e forms
-│   │   ├── dynamic.py          # Auto-criação de ferramentas em runtime (anti-SSRF)
-│   │   ├── github.py           # Gestão de Issues e repositórios GitHub
-│   │   ├── google.py           # Gmail e Google Calendar
-│   │   ├── slack.py            # Envio de mensagens no Slack
-│   │   ├── vision.py           # Análise multimodal de imagens via LLM
-│   │   ├── web.py              # Busca DuckDuckGo e scraping seguro
-│   │   └── integrations.py     # Inicializador central de ferramentas
-│   ├── channels.py             # Despacho de mensagens para Slack e WhatsApp
-│   ├── config.py               # Configurações do projeto e variáveis de ambiente
-│   ├── dashboard.py            # Dashboard web moderno embutido (/dashboard)
-│   ├── handoff_api.py          # Rotas REST e Console Web do atendente humano
-│   ├── health.py               # Diagnóstico de prontidão e circuit breaker
-│   ├── i18n.py                 # Detecção de idioma e mensagens multilíngues
-│   ├── main.py                 # Entrada FastAPI, roteadores, voz e webhooks
-│   ├── memory.py               # Sessões Redis + busca vetorial no pgvector
-│   ├── metrics.py              # Definições centralizadas de métricas Prometheus
-│   ├── ratelimit.py            # Rate limiter por API Key, sessão e IP (Sliding Window)
-│   ├── secrets.py              # Docker/K8s secrets mount e validação de produção
-│   ├── security.py             # Validação HMAC, JWT (Clerk/Auth0) e API Keys
-│   ├── tickets.py              # Gerenciador de tickets e alertas para humanos
-│   └── voice.py                # Pipeline de voz (Speech-to-Text e Text-to-Speech)
+├── infra/                               # Infraestrutura como código e provisionamento
+│   ├── Dockerfile                       # Imagem conteinerizada de produção
+│   ├── docker-compose.yml               # Orquestração local para desenvolvimento
+│   ├── docker-compose.prod.yml          # Configuração de produção com restrições e réplicas
+│   ├── grafana/                         # Provisionamento declarativo do Grafana
+│   │   ├── dashboards/                  # Definição JSON do painel operacional
+│   │   └── provisioning/                # Mapeamento automático de datasources e provedores
+│   └── prometheus/                      # Configuração de coleta de métricas do Prometheus
 │
-├── infra/                      # 🐳 Infraestrutura, monitoramento e deploy
-│   ├── Dockerfile              # Imagem Docker otimizada da aplicação
-│   ├── docker-compose.yml      # Compose de desenvolvimento com NIM, Redis e Postgres
-│   ├── docker-compose.prod.yml # Compose de produção com limites, secrets e réplicas
-│   ├── grafana/                # Provisionamento e dashboards do Grafana
-│   │   ├── dashboards/         # Painel oficial AI Agent 24/7 (JSON)
-│   │   └── provisioning/       # Datasource Prometheus e dashboard providers
-│   └── prometheus/             # Configuração de scraping do Prometheus
+├── scripts/                             # Utilitários de desenvolvimento e demonstração
+│   ├── demo_chat.py                     # Interface de chat interativo em linha de comando
+│   ├── demo_handoff.py                  # Automação do ciclo de vida de transbordo humano
+│   ├── google_oauth_setup.py            # Assistente para emissão de credenciais OAuth do Google
+│   ├── smoke_llm.py                     # Teste de fumaça de inferência com LLMs reais
+│   └── temporal_worker.py               # Worker para workflows de longa duração com Temporal
 │
-├── scripts/                    # 🧪 Scripts de demo e ferramentas
-│   ├── demo_chat.py            # Chat interativo CLI para testar conversas
-│   ├── demo_handoff.py         # Demonstração automatizada do ciclo de handoff
-│   ├── google_oauth_setup.py   # Utilitário para gerar token OAuth do Google
-│   ├── smoke_llm.py            # Teste rápido de conexão e function calling com LLM
-│   └── temporal_worker.py      # Worker para workflows de longa duração
+├── docs/                                # Documentação técnica complementar
+│   ├── examples/                        # Exemplos e bibliotecas operacionais
+│   │   └── prompts.md                   # Catálogo de prompts estruturados para ferramentas
+│   ├── architecture.md                  # Especificação complementar de arquitetura
+│   └── ROADMAP.md                       # Acompanhamento das fases de entrega do projeto
 │
-├── docs/                       # 📚 Documentação complementar
-│   ├── examples/               # Exemplos e bibliotecas de prompts
-│   │   └── prompts.md          # Biblioteca de prompts recomendados para ferramentas
-│   ├── architecture.md         # Diagrama de arquitetura simplificado
-│   └── ROADMAP.md              # Quadro de tarefas e status das fases
+├── tests/                               # Suíte com 122 testes automatizados
+│   ├── test_browser_tool.py             # Testes unitários do PlaywrightBrowserTool
+│   ├── test_channels.py                 # Testes de envio para canais externos
+│   ├── test_core.py                     # Testes de fluxo básico e endpoints do FastAPI
+│   ├── test_dashboard_and_dynamic_api.py# Testes do console web e API de ferramentas dinâmicas
+│   ├── test_dynamic_tools.py            # Testes do motor de criação de ferramentas em runtime
+│   ├── test_github_tool.py              # Testes da integração com a API do GitHub
+│   ├── test_google_tools.py             # Testes das ferramentas Gmail e Google Calendar
+│   ├── test_handoff.py                  # Testes da fila de tickets e protocolo de transbordo
+│   ├── test_health.py                   # Testes dos diagnósticos de saúde e tolerância a falhas
+│   ├── test_i18n.py                     # Testes da detecção de idiomas e internacionalização
+│   ├── test_jwt_auth.py                 # Testes de validação de tokens JWT (HS256/RS256)
+│   ├── test_nim_client.py               # Testes do cliente HTTP para NVIDIA NIM
+│   ├── test_production.py               # Testes de resolução de segredos e validação de produção
+│   ├── test_ratelimit.py                # Testes do algoritmo de rate limiting por janela deslizante
+│   ├── test_security.py                 # Testes de assinaturas criptográficas HMAC e API keys
+│   ├── test_session_memory.py           # Testes de persistência no Redis e vetores no pgvector
+│   ├── test_tools_loop.py               # Testes do ciclo de raciocínio e execução de ferramentas
+│   ├── test_vision_tool.py              # Testes da ferramenta multimodal de visão
+│   └── test_voice.py                    # Testes do pipeline completo de transcrição e síntese de voz
 │
-├── tests/                      # 🧪 Suíte com 122 testes automatizados
-│   ├── test_browser_tool.py    # Testes do Playwright browser
-│   ├── test_dashboard_and_dynamic_api.py # Testes do dashboard e API de dynamic tools
-│   ├── test_dynamic_tools.py   # Testes da criação de tools em runtime
-│   ├── test_github_tool.py     # Testes da integração GitHub
-│   ├── test_google_tools.py    # Testes de Gmail e Calendar
-│   ├── test_handoff.py         # Testes de tickets e transbordo humano
-│   ├── test_i18n.py            # Testes de detecção de idioma e respostas consistentes
-│   ├── test_jwt_auth.py        # Testes de autenticação JWT
-│   ├── test_production.py      # Testes de secrets e validação de produção
-│   ├── test_ratelimit.py       # Testes de rate limiting por chave/sessão
-│   ├── test_vision_tool.py     # Testes da análise multimodal de imagem
-│   └── test_voice.py           # Testes do pipeline STT e TTS de voz
-│
-├── .env.example                # Template de configuração de variáveis
-├── pyproject.toml              # Metadados e dependências do pacote
-├── CONTRIBUTING.md             # Padrões de código e fluxo de contribuição
-└── LICENSE                     # Licença MIT
+├── .env.example                         # Arquivo de exemplo com todas as variáveis documentadas
+├── pyproject.toml                       # Metadados do projeto, dependências e configurações
+├── CONTRIBUTING.md                      # Diretrizes de contribuição e padrões de código
+└── LICENSE                              # Licença de uso do software (MIT)
 ```
 
 ---
 
-## 🗺️ Status e Próximos Passos (Roadmap)
+## 13. Licença
 
-Consulte o arquivo [`docs/ROADMAP.md`](docs/ROADMAP.md) para detalhes completos de cada fase.
-
-- [x] **Fase 0:** Estrutura base, linters, pre-commit e governança de código.
-- [x] **Fase 1:** Integração com NVIDIA NIM (Chat e Function Calling).
-- [x] **Fase 2:** Orquestração de grafo (LangGraph), sessões no Redis e memória vetorial pgvector.
-- [x] **Fase 3:** Ferramentas de navegação web (anti-SSRF), busca e Slack.
-- [x] **Fase 4:** Webhooks seguros com verificação HMAC para Slack e WhatsApp Cloud API.
-- [x] **Fase 5:** Monitoramento (Prometheus `/metrics`), diagnósticos `/ready` e resiliência com fallback.
-- [x] **Fase 6:** Transbordo humano completo com fila de tickets e Console Web interativo.
-- [x] **Fase 7:** Implementação das ferramentas de Gmail, Google Agenda, GitHub e Visão Multimodal.
-- [x] **Fase 8:** Headless Browser real com Playwright, Canal de Voz (STT + TTS) e Deploy de Produção com Secrets.
-- [x] **Fase 9:** Suporte Multilíngue avançado com detecção automática e respostas consistentes.
-- [x] **Fase 10:** Rate Limiting por usuário, chave e sessão com cabeçalhos informativos HTTP 429.
-- [x] **Fase 11:** Dashboard web operacional nativo e stack de observabilidade Grafana + Prometheus.
-- [x] **Fase 12:** Auto-criação de ferramentas em runtime pelo agente com proteção anti-SSRF.
-- [ ] **Fase 13:** Workflows de longa duração distribuídos com Temporal.
-
----
-
-## 📄 Licença
-
-Distribuído sob a licença **MIT**. Veja o arquivo [`LICENSE`](LICENSE) para mais informações.
+Este projeto é distribuído sob os termos da licença **MIT**. Consulte o arquivo [`LICENSE`](LICENSE) para obter o texto integral dos termos de uso e redistribuição.
