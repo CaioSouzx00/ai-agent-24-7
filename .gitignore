@@ -17,3 +17,5 @@ credentials.json
 token.json
 *.log
 .nim-cache/
+web/node_modules/
+web/dist/
