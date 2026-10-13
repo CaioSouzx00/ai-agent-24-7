@@ -2,17 +2,13 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 from app.channels import get_senders
+from app.dashboard import get_dashboard_html
 from app.security import require_api_key
 from app.tickets import Ticket
-
-STATIC_UI = Path(__file__).parent / "static" / "handoff.html"
 
 # The UI page itself is static; every data endpoint below requires the API key.
 public = APIRouter(prefix="/handoff", tags=["handoff"])
@@ -44,7 +40,7 @@ async def _get(request: Request, ticket_id: str) -> Ticket:
 
 @public.get("/ui", include_in_schema=False)
 async def ui():
-    return FileResponse(STATIC_UI, media_type="text/html")
+    return get_dashboard_html()
 
 
 @api.get("/tickets")

@@ -7,10 +7,12 @@ import json
 import logging
 from collections.abc import Awaitable, Callable
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Any
 
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Query, Request
-from fastapi.responses import JSONResponse, PlainTextResponse
+from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
+from fastapi.staticfiles import StaticFiles
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
 from app.agent.graph import build_graph
@@ -80,6 +82,25 @@ app.include_router(tools.router)
 app.include_router(dashboard.router)
 app.include_router(handoff_public)
 app.include_router(handoff_api)
+
+_WEB_DIST = Path(__file__).resolve().parent.parent / "web" / "dist"
+if (_WEB_DIST / "assets").exists():
+    app.mount("/assets", StaticFiles(directory=str(_WEB_DIST / "assets")), name="spa_assets")
+
+
+@app.get("/", include_in_schema=False)
+async def spa_root():
+    """Serve the single-page application (SPA) root."""
+    from app.dashboard import get_dashboard_html
+
+    return get_dashboard_html()
+
+
+if (_WEB_DIST / "favicon.svg").exists():
+
+    @app.get("/favicon.svg", include_in_schema=False)
+    async def favicon():
+        return FileResponse(str(_WEB_DIST / "favicon.svg"))
 
 
 async def _run(
