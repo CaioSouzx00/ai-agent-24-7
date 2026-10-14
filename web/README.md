@@ -20,19 +20,25 @@ Enterprise Single Page Application (SPA) for the AI Agent 24/7 platform, deliver
 
 ---
 
-## 2. Visual Tour das Telas
+## 2. Visual Tour das Telas & Guia de Uso
 
-| Tela / Módulo | Captura em Alta Resolução |
-| :--- | :--- |
-| **01. Início / Manifesto (`/`)** | ![Início](../docs/images/preview-hero.png) |
-| **02. Telemetria (`/dashboard`)** | ![Telemetria](../docs/images/preview-dashboard.png) |
-| **03. Chat do Agente (`/chat`)** | ![Chat](../docs/images/preview-chat.png) |
-| **04. Atendimento Humano (`/handoff`)** | ![Handoff](../docs/images/preview-handoff.png) |
-| **05. Ferramentas (`/tools`)** | ![Ferramentas](../docs/images/preview-tools.png) |
+Abaixo estão todas as 9 telas e interações modais disponíveis no frontend, com links diretos para as imagens em alta resolução e o guia prático de como utilizar cada recurso:
+
+| Tela / Módulo | Captura em Alta Resolução | O que faz & Como usar |
+| :--- | :--- | :--- |
+| **01. Início / Manifesto (`/`)** | ![Início](../docs/images/preview-hero.png) | Portal de apresentação com manifesto editorial, malha neural 2D interativa com deformação física ao passar o mouse e formulário no rodapé para envio rápido de perguntas de teste à IA. |
+| **02. Telemetria (`/dashboard`)** | ![Telemetria](../docs/images/preview-dashboard.png) | Cockpit de métricas operacionais em tempo real: contador de conversas processadas, tickets humanos ativos, ferramentas registradas e bloqueios de segurança por rate limit. Inclui botão de sincronização e atalho para Grafana. |
+| **03. Chat do Agente (`/chat`)** | ![Chat](../docs/images/preview-chat.png) | Laboratório conversacional interativo com balões de diálogo contrastantes, badges de tool calling, atalhos prontos (teste de transbordo, listagem de ferramentas e busca web) e botão para reiniciar sessão. |
+| **04. Fila de Atendimento (`/handoff`)** | ![Handoff Triagem](../docs/images/preview-handoff.png) | Painel de triagem da fila de escalonamento humano com filtros por status (`Todos`, `Abertos`, `Assumidos`, `Finalizados`) e lista de chamados aguardando intervenção com indicação de motivo e canal. |
+| **05. Atendimento Ativo (`/handoff`)** | ![Handoff Ativo](../docs/images/preview-handoff-active.png) | Workspace de intervenção direta do operador humano com histórico cronológico de mensagens, botão para assumir ticket (`Claimed`), chat de resposta direta ao cliente e botão para finalizar chamado (`Resolved`). |
+| **06. Matriz de Ferramentas (`/tools`)** | ![Ferramentas](../docs/images/preview-tools.png) | Catálogo de habilidades registradas no robô (nativas e dinâmicas) com nome técnico, descrição funcional em linguagem natural, método HTTP e botão para cadastrar novas integrações sem reiniciar o backend. |
+| **07. Modal de Ferramenta Dinâmica** | ![Modal Ferramenta](../docs/images/preview-tools-modal.png) | Modal interativo para criação em tempo de execução de novas ferramentas de API, com validação de formato de rota, seleção de verbo HTTP (GET/POST) e cabeçalhos de autorização seguros. |
+| **08. Identificação do Atendente** | ![Modal Identificação](../docs/images/preview-auth-modal.png) | Modal global de credenciais que permite ao operador definir seu nome público de assinatura nos atendimentos e configurar sua chave secreta de API (`Bearer token`) persistida no `localStorage`. |
+| **09. Terminal Global (`Ctrl + K`)** | ![Command Palette](../docs/images/preview-command-palette.png) | Paleta de comandos global acessível por atalho de teclado para navegação instantânea em milissegundos entre todas as rotas e funções do sistema. |
 
 ---
 
-## 2. Feature-Based Architecture
+## 3. Feature-Based Architecture
 
 The source code in `src/` enforces strict architectural boundaries to avoid coupling and circular dependencies:
 
@@ -59,7 +65,7 @@ src/
 
 ---
 
-## 3. Development & Build Commands
+## 4. Development & Build Commands
 
 ```bash
 # Install dependencies
@@ -90,7 +96,7 @@ npm run preview
 
 ---
 
-## 4. Production Integration with Backend
+## 5. Production Integration with Backend
 
 When built via `npm run build`, production assets are emitted to `web/dist/`.
 

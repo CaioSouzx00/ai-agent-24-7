@@ -25,6 +25,15 @@ Autonomous enterprise artificial intelligence platform for conversational custom
 
 - [1. Overview](#1-overview)
 - [2. Visual Tour & Interface Guide (Painel Web)](#2-visual-tour--interface-guide-painel-web)
+  - [2.1 Início & Manifesto do Sistema (`/`)](#21-início--manifesto-do-sistema-)
+  - [2.2 Painel de Telemetria & Métricas (`/dashboard`)](#22-painel-de-telemetria--métricas-dashboard)
+  - [2.3 Chat do Agente & Playground (`/chat`)](#23-chat-do-agente--playground-chat)
+  - [2.4 Fila de Atendimento Humano - Triagem (`/handoff`)](#24-fila-de-atendimento-humano---triagem-handoff)
+  - [2.5 Atendimento Humano Ativo - Intervenção (`/handoff`)](#25-atendimento-humano-ativo---intervenção-handoff)
+  - [2.6 Matriz de Ferramentas & Habilidades (`/tools`)](#26-matriz-de-ferramentas--habilidades-tools)
+  - [2.7 Modal de Cadastro de Ferramenta Dinâmica](#27-modal-de-cadastro-de-ferramenta-dinâmica)
+  - [2.8 Modal de Identificação do Atendente](#28-modal-de-identificação-do-atendente)
+  - [2.9 Terminal de Comandos Global (Ctrl + K)](#29-terminal-de-comandos-global-ctrl--k)
 - [3. System Architecture](#3-system-architecture)
 - [4. State Machine & Decision Graph (LangGraph)](#4-state-machine--decision-graph-langgraph)
 - [5. Core Modules & Capabilities](#5-core-modules--capabilities)
@@ -71,78 +80,166 @@ Autonomous enterprise artificial intelligence platform for conversational custom
 
 A interface do **AI Agent 24/7** foi construída sob uma direção de arte **Dark Editorial Brutalista** com a paleta **Acid Volt & Obsidian Carbon** (`#040405` e `#D4FF00`). Todo o painel está disponível em Português e conta com ferramentas visuais e operacionais prontas para uso.
 
-Abaixo você confere o que cada tela faz e como realizar cada ação passo a passo:
+Abaixo você confere o que cada tela faz e como realizar cada ação passo a passo, sem rodeios:
+
+---
 
 ### 2.1 Início & Manifesto do Sistema (`/`)
-![Início](docs/images/preview-hero.png)
+![Início e Manifesto](docs/images/preview-hero.png)
 
-- **O que esta tela faz:** É a página de apresentação do sistema. Nela você encontra a visão geral de arquitetura, o pipeline de dados em 4 etapas (Ingresso seguro, Raciocínio com IA, Memória persistente e Transbordo humano) e uma área de testes interativa.
-- **Como usar:**
-  - Role a página para inspecionar os cartões do pipeline com especificações técnicas e latências de cada etapa.
-  - Passe o mouse sobre o cartão central para deformar interativamente a malha neural 2D a 60 FPS.
-  - No formulário do rodapé, digite qualquer pergunta no campo de teste rápido (ex: *"Como você ajuda a atender meus clientes?"*) e clique em **[ENVIAR PERGUNTA]** para ver a resposta imediata do robô.
+- **O que esta tela faz:** É o portal de entrada e apresentação da infraestrutura do robô. Combina a identidade editorial da plataforma com uma demonstração visual do pipeline de atendimento em tempo real, especificações de latência e um campo de envio de perguntas para validação rápida.
+- **Elementos e Indicadores em Tela:**
+  - **Barra de Navegação Superior:** Acesso direto a todas as seções (`Manifesto`, `Telemetria`, `Chat IA`, `Transbordo`, `Habilidades`), indicador de atalho rápido (`Ctrl + K`) e botão de identificação do atendente.
+  - **Pipeline em 4 Fases:**
+    - `01/04 INGRESSO` (< 15ms): Validação de assinaturas criptográficas, proteção anti-SSRF e limitação de taxa.
+    - `02/04 RACIOCÍNIO` (~450ms): Decisão autônoma com LangGraph e roteamento semântico.
+    - `03/04 MEMÓRIA` (< 5ms): Recuperação de contexto persistente em duas camadas (Redis + PostgreSQL).
+    - `04/04 TRANSBORDO` (~120ms): Protocolo de escalonamento imediato para atendente humano quando necessário.
+  - **Malha Neural Interativa 2D:** Canvas gráfico gerado a 60 FPS que reage e se deforma fisicamente à passagem do mouse.
+  - **Campo de Envio Rápido:** Formulário no rodapé para enviar perguntas diretamente ao robô sem precisar abrir o playground.
+- **Como usar passo a passo:**
+  1. Role pela página para examinar as garantias arquiteturais do sistema.
+  2. Passe o mouse sobre o cartão central para inspecionar a física interativa da malha topográfica.
+  3. No rodapé, digite qualquer pergunta (ex: *"Como funciona a garantia do meu plano?"*) e clique em **[ENVIAR PERGUNTA]**. A IA processará a resposta e exibirá o resultado na hora.
 
 ---
 
 ### 2.2 Painel de Telemetria & Métricas (`/dashboard`)
 ![Painel de Telemetria](docs/images/preview-dashboard.png)
 
-- **O que esta tela faz:** Funciona como o centro de monitoramento do robô. Apresenta indicadores em tempo real (KPIs) sobre volume de conversas, chamados humanos pendentes, ferramentas ativas e bloqueios de segurança.
-- **Significado de cada indicador:**
-  - **Processed Requests (Conversas Atendidas):** Total de turnos e mensagens que o robô processou e respondeu.
-  - **Active Human Tickets (Chamados com Atendente):** Quantos clientes precisam da atenção de uma pessoa real agora (casos de insatisfação, pedidos de cancelamento, etc.).
-  - **Registered Tools (Habilidades Ativas):** Funções nativas e dinâmicas que o robô sabe acionar autonomamente.
-  - **Rate Limit Blocks (Bloqueios de Segurança):** Mensagens em excesso bloqueadas pelo limitador de taxa para proteger o servidor contra sobrecarga.
-- **Como usar:**
-  - Clique em **[ATUALIZAR DADOS]** para sincronizar o status mais recente do servidor.
-  - Clique em **[PAINEL GRAFANA]** para abrir os gráficos analíticos em tempo real (na porta 3000).
-  - A caixa **Registro Técnico (Prometheus)** exibe o log bruto de métricas para desenvolvedores; você pode usar o botão **[COPIAR TUDO]** para exportar os dados brutos.
+- **O que esta tela faz:** É o centro de comando e observabilidade do sistema. Permite que gestores e operadores acompanhem em tempo real a saúde do robô, o fluxo de mensagens atendidas, os incidentes encaminhados para humanos e os bloqueios preventivos de tráfego.
+- **Significado de cada indicador (KPIs):**
+  - **Processed Requests (Conversas Atendidas):** Volume total cumulativo de mensagens e turnos conversacionais que o agente já atendeu com sucesso.
+  - **Active Human Tickets (Chamados com Atendente):** Total de atendimentos transferidos pelo robô que estão aguardando triagem ou sendo respondidos por um atendente humano.
+  - **Registered Tools (Habilidades Ativas):** Quantidade de ferramentas externas (APIs, consultas e automações) que o robô tem permissão para acionar durante o atendimento.
+  - **Rate Limit Blocks (Bloqueios de Segurança):** Tentativas abusivas de requisição que o limitador de vazão bloqueou para proteger a integridade do servidor.
+- **Como usar passo a passo:**
+  1. **Atualizar métricas:** Clique no botão **[ATUALIZAR DADOS]** no topo para forçar uma sincronização imediata com os servidores backend.
+  2. **Abrir painel completo do Grafana:** Clique no botão **[PAINEL GRAFANA]** para abrir a instância de telemetria detalhada na porta 3000, com gráficos históricos de latência p99 e uso de memória.
+  3. **Exportar métricas de desenvolvimento:** Role até a seção **Registro Técnico (Prometheus)** e clique em **[COPIAR TUDO]** para copiar o snapshot bruto de métricas para a sua área de transferência.
 
 ---
 
-### 2.3 Chat do Agente & Área de Testes (`/chat`)
+### 2.3 Chat do Agente & Playground (`/chat`)
 ![Chat do Agente](docs/images/preview-chat.png)
 
-- **O que esta tela faz:** Ambiente interativo para conversar diretamente com o robô e testar como ele se comportará com seus clientes reais.
+- **O que esta tela faz:** Espaço interativo para testar o comportamento, as respostas, o raciocínio e o escalonamento do agente exatamente como os seus clientes vivenciam nos canais reais (WhatsApp, Webchat, Telegram).
+- **Elementos e Indicadores em Tela:**
+  - **Balões Conversacionais:** Design diferenciado entre as mensagens do usuário (fundo cinza escuro sutil) e as respostas do robô (borda iluminada em Acid Volt).
+  - **Marcadores de Tool Calling:** Notificações visuais quando o robô consulta ferramentas externas antes de redigir a resposta.
+  - **Barra de Atalhos de Teste Pré-configurados:**
+    - `[1. TESTAR TRANSFERÊNCIA HUMANA]`: Envia uma solicitação crítica de cancelamento (*"Quero cancelar meu contrato imediatamente..."*).
+    - `[2. LISTAR HABILIDADES DO ROBÔ]`: Pede para a IA listar tudo o que ela é capaz de fazer.
+    - `[3. PEDIR BUSCA NA WEB]`: Dispara um teste prático de busca em tempo real na internet.
+  - **Botão [NOVA CONVERSA]:** No canto superior direito, permite reiniciar a memória temporária da sessão a qualquer momento.
 - **Como usar passo a passo:**
-  1. **Envio manual:** Digite qualquer dúvida ou instrução na linha de comando inferior (ex: *"Vocês atendem aos sábados?"*) e pressione Enter ou clique em **[ENVIAR]**.
-  2. **Exemplos rápidos prontos:** Use a barra de atalhos logo acima da digitação:
-     - `[1. TESTAR TRANSFERÊNCIA HUMANA]`: Envia uma mensagem de cancelamento (*"Quero cancelar meu contrato..."*). Observe o alerta amarelo que surge na tela e a criação automática do chamado na fila de atendimento!
-     - `[2. LISTAR HABILIDADES DO ROBÔ]`: O agente lista todas as ferramentas que possui ativas.
-     - `[3. PEDIR BUSCA NA WEB]`: O agente executa uma pesquisa na internet e sintetiza o resultado.
-  3. **Reiniciar conversa:** Clique em **[NOVA CONVERSA]** no topo para limpar a memória temporária da sessão e iniciar um novo teste.
+  1. **Conversar livremente:** Digite qualquer dúvida ou mensagem na barra inferior (ex: *"Qual é a tabela de preços do serviço?"*) e pressione `Enter` ou clique no botão **[ENVIAR]**.
+  2. **Testar o transbordo para humanos:** Clique no botão `[1. TESTAR TRANSFERÊNCIA HUMANA]`. Observe que o agente detecta insatisfação/cancelamento, exibe um alerta âmbar comunicando o silenciamento automático do robô e cria na mesma hora um chamado na fila humana!
+  3. **Limpar a conversa:** Clique em **[NOVA CONVERSA]** para resetar o histórico e iniciar uma nova rodada de testes do zero.
 
 ---
 
-### 2.4 Fila de Atendimento Humano (Handoff) (`/handoff`)
+### 2.4 Fila de Atendimento Humano - Triagem (`/handoff`)
 ![Fila de Atendimento Humano](docs/images/preview-handoff.png)
 
-- **O que esta tela faz:** Central de atendimento onde operadores e atendentes assumem conversas com clientes que o robô pausou para não cometer erros (por exemplo: clientes solicitando cancelamento, com problemas complexos ou que pediram expressamente para falar com uma pessoa).
-- **Como atender um cliente passo a passo:**
-  1. **Coluna da esquerda:** Visualize a lista de chamados aguardando. Você pode filtrar por `[TODOS]`, `[ABERTOS]`, `[ASSUMIDOS]` ou `[FINALIZADOS]`.
-  2. **Inspecione a conversa:** Clique no chamado do cliente para carregar todo o histórico no centro da tela.
-  3. **Assuma o atendimento:** Clique no botão **[ASSUMIR ESTE ATENDIMENTO]** para que seus colegas saibam que você é o atendente responsável.
-  4. **Responda ao cliente:** Digite sua resposta na barra inferior e clique em **[ENVIAR RESPOSTA]**. A mensagem é despachada diretamente para o canal do cliente (WhatsApp, Web, Slack, etc.).
-  5. **Finalize o chamado:** Quando o problema for resolvido, clique no botão verde **[FINALIZAR CHAMADO]** para encerrar o ticket.
+- **O que esta tela faz:** Central de atendimento humano (Human-in-the-Loop). Quando o robô detecta que um cliente está irritado, quer cancelar ou solicitou expressamente uma pessoa, ele se silencia automaticamente e transfere o cliente para esta fila para que um operador assuma o controle.
+- **Elementos e Indicadores em Tela:**
+  - **Painel de Chamados (Coluna Esquerda):** Lista todos os chamados com ID único (`#abc12345`), canal de entrada (ex: `whatsapp`, `web`), motivo da transferência (`human_requested`), status atual (`Open`, `Claimed`, `Resolved`) e horário do evento.
+  - **Filtros Rápidos por Status:**
+    - `[TODOS]`: Exibe todos os tickets do histórico.
+    - `[ABERTOS]`: Mostra apenas clientes que estão na fila aguardando uma pessoa atender.
+    - `[ASSUMIDOS]`: Chamados que já estão sendo atendidos por você ou por um colega.
+    - `[FINALIZADOS]`: Histórico de chamados que já foram resolvidos e encerrados.
+  - **Painel Central Informativo:** Antes de abrir um chamado, exibe as instruções de operação e as boas práticas de atendimento.
+- **Como usar passo a passo:**
+  1. Clique na aba de filtro **[ABERTOS]** para localizar os clientes aguardando resposta.
+  2. Clique sobre qualquer cartão da lista na coluna esquerda. O sistema carregará o histórico integral da conversa com o cliente no centro da tela.
 
 ---
 
-### 2.5 Matriz de Ferramentas & Habilidades (`/tools`)
+### 2.5 Atendimento Humano Ativo - Intervenção (`/handoff`)
+![Atendimento Humano Ativo](docs/images/preview-handoff-active.png)
+
+- **O que esta tela faz:** É o posto de trabalho individual do operador. Permite que você leia tudo o que o cliente conversou com o robô antes de ser transferido, assuma o chamado com seu nome e mande mensagens reais direto para o WhatsApp ou Webchat do cliente.
+- **Elementos e Indicadores em Tela:**
+  - **Cabeçalho do Chamado:** Mostra o ID do ticket, badge de status (`Claimed`), identificador do operador responsável e motivo do escalonamento.
+  - **Histórico Completo da Conversa:** Exibe todas as mensagens trocadas cronologicamente para que o operador saiba exatamente o que aconteceu sem precisar perguntar tudo de novo ao cliente.
+  - **Botão [ASSUMIR ESTE ATENDIMENTO]:** Aloca o ticket para você, mudando o status para `Claimed` e avisando os outros operadores da equipe que o caso já está sob seus cuidados.
+  - **Botão [FINALIZAR CHAMADO]:** Encerra a conversa com status `Resolved` e arquiva o chamado após solucionar a questão do cliente.
+  - **Barra de Resposta Humana:** Campo de digitação com a indicação `Enviando como: [Seu Nome]`.
+- **Como usar passo a passo:**
+  1. Após clicar no chamado, clique no botão **[ASSUMIR ESTE ATENDIMENTO]**. O ticket será formalmente atribuído a você.
+  2. Leia as mensagens anteriores para entender o contexto e a queixa do cliente.
+  3. Digite sua resposta humanizada no campo inferior e clique em **[ENVIAR RESPOSTA]**. A mensagem é despachada na mesma hora para o cliente.
+  4. Quando o assunto estiver resolvido, clique no botão verde **[FINALIZAR CHAMADO]** para liberar o ticket.
+
+---
+
+### 2.6 Matriz de Ferramentas & Habilidades (`/tools`)
 ![Matriz de Ferramentas](docs/images/preview-tools.png)
 
-- **O que esta tela faz:** Catálogo de todas as habilidades extras que o robô pode chamar durante uma conversa (busca na web, previsão do tempo, consulta a banco de dados ou sistemas internos da sua empresa).
-- **Como cadastrar uma nova ferramenta (sem programar):**
-  1. Clique no botão **[+ CADASTRAR NOVA HABILIDADE]** no topo direito.
-  2. **Nome da Ferramenta:** Insira um nome curto em minúsculas (ex: `consulta_estoque`, `preco_dolar`).
-  3. **O que esta ferramenta faz?:** Escreva uma frase explicativa clara (ex: *"Consulta a quantidade disponível de um produto no estoque da loja"*). O robô lê essa descrição para saber quando deve acionar a ferramenta!
-  4. **Link da API (URL):** O endereço web onde o robô buscará os dados.
-  5. Clique em **[CADASTRAR HABILIDADE]**. O robô passa a acionar a nova função autonomamente nas conversas.
+- **O que esta tela faz:** Catálogo de capacidades técnicas do robô. Aqui você visualiza todas as ferramentas que a IA tem permissão para acionar (consultas em banco de dados, scrapers, APIs financeiras, etc.) e pode cadastrar novas integrações em tempo real.
+- **Elementos e Indicadores em Tela:**
+  - **Grade de Cartões de Ferramentas:** Cada cartão apresenta:
+    - **Nome técnico da função:** Identificador usado pelo cérebro da IA (ex: `web_search`, `calculate_quote`).
+    - **Descrição funcional:** Texto em linguagem natural que explica para a IA quando e por que ela deve usar essa ferramenta.
+    - **Etiqueta de Tipo:** `Native` (ferramentas nativas do núcleo do sistema) ou `Dynamic` (APIs cadastradas dinamicamente).
+    - **Método HTTP:** `GET` ou `POST`.
+  - **Botão [+ CADASTRAR NOVA HABILIDADE]:** No canto superior direito, aciona o assistente de criação de novas integrações sem necessidade de reiniciar o sistema.
+- **Como usar passo a passo:**
+  1. Revise as ferramentas existentes para conferir se as integrações necessárias estão ativas.
+  2. Para registrar uma nova integração externa na IA, clique no botão **[+ CADASTRAR NOVA HABILIDADE]** para abrir o formulário de cadastro.
 
 ---
 
-### 2.6 Atalhos Globais & Identificação do Atendente
-- **Busca Rápida (`Ctrl + K`):** Abra o terminal de comandos de qualquer tela para navegar instantaneamente para qualquer página.
-- **Identificação do Atendente:** Clique no botão **`ATENDENTE: ...`** no canto superior direito para definir o seu nome (ex: `Caio`). É essa assinatura que o cliente verá quando você responder na fila humana.
+### 2.7 Modal de Cadastro de Ferramenta Dinâmica
+![Modal de Cadastro de Ferramenta](docs/images/preview-tools-modal.png)
+
+- **O que esta tela faz:** Permite que desenvolvedores e analistas adicionem novas capacidades e conexões de API ao robô de forma visual (sem encostar no código-fonte nem reiniciar a aplicação).
+- **Campos do Formulário:**
+  - **Nome da Ferramenta (`name`):** Nome identificador único em letras minúsculas e sem espaços (ex: `consultar_pedido`, `cotacao_moeda`).
+  - **O que esta ferramenta faz? (`description`):** Instrução clara e precisa sobre o objetivo da função. O robô lê essa descrição durante a conversa para saber se deve ou não acionar a ferramenta.
+  - **Link da API / Endpoint (`endpoint`):** A URL completa onde o robô fará as requisições (ex: `https://api.empresa.com/v1/pedidos`).
+  - **Método HTTP:** Selecione `GET` para consultas ou `POST` para envio e processamento de dados.
+  - **Cabeçalhos de Autenticação / Headers (JSON opcional):** Campo para inserir chaves de segurança e tokens Bearer (ex: `{"Authorization": "Bearer meu_token_aqui"}`).
+- **Como usar passo a passo:**
+  1. Clique em **[+ CADASTRAR NOVA HABILIDADE]** na página de Ferramentas (`/tools`).
+  2. Preencha o nome técnico e uma descrição rica em detalhes para a IA entender quando usar.
+  3. Cole a URL da API da sua empresa ou serviço parceiro.
+  4. Clique no botão **[CADASTRAR HABILIDADE]**. O sistema valida o formato, registra o esquema e o robô já passa a usar a ferramenta nas próximas conversas!
+
+---
+
+### 2.8 Modal de Identificação do Atendente
+![Modal de Identificação do Atendente](docs/images/preview-auth-modal.png)
+
+- **O que esta tela faz:** Configura quem é você dentro do sistema. Define o seu nome de operador e salva credenciais de segurança no seu navegador para que suas ações na fila de atendimento e na criação de ferramentas fiquem registradas e autenticadas.
+- **Campos do Formulário:**
+  - **Nome do Operador:** O nome ou apelido profissional que você deseja usar (ex: `Caio`, `Suporte N2`). Esse nome será visível para os clientes quando você assumir e responder chamados.
+  - **Chave de API / Token Secreto:** Token de autenticação Bearer para liberar ações administrativas quando o backend estiver com autenticação de segurança ligada (`API_KEY_SECRET`).
+- **Como usar passo a passo:**
+  1. Em qualquer tela da aplicação, clique no botão **`ATENDENTE: ...`** localizado no topo direito da barra de navegação.
+  2. No modal que se abre, digite o seu nome no campo correspondente.
+  3. Se a sua empresa exigir chave de segurança, cole o token de API no campo seguinte.
+  4. Clique em **[SALVAR IDENTIFICAÇÃO]**. Os dados ficam salvos de forma privada no `localStorage` do seu navegador.
+
+---
+
+### 2.9 Terminal de Comandos Global (Ctrl + K)
+![Terminal de Comandos Global](docs/images/preview-command-palette.png)
+
+- **O que esta tela faz:** É uma central de navegação por teclado instantânea (Command Palette) inspirada no Raycast e Spotlight. Permite alternar entre telas e acionar funções do sistema em milissegundos sem tirar as mãos do teclado.
+- **Comandos e Atalhos Rápidos Suportados:**
+  - Digite `início` ou `manifesto` → Salta diretamente para a página inicial (`/`).
+  - Digite `telemetria` ou `dashboard` → Salta para a tela de métricas operacionais (`/dashboard`).
+  - Digite `chat` ou `testes` → Abre o playground conversacional (`/chat`).
+  - Digite `transbordo` ou `handoff` → Abre a central de atendimento humano (`/handoff`).
+  - Digite `habilidades` ou `ferramentas` → Abre a matriz de ferramentas da IA (`/tools`).
+  - Digite `identificação` ou `operador` → Abre o modal de credenciais do atendente.
+- **Como usar passo a passo:**
+  1. Em qualquer lugar do sistema, pressione o atalho **`Ctrl + K`** (ou `Cmd + K` no Mac), ou clique no botão **`Ctrl + K`** na barra superior.
+  2. Comece a digitar o que você quer fazer (ex: `chat` ou `handoff`).
+  3. Use as setas do teclado `↑` / `↓` para selecionar o comando desejado e aperte `Enter` para navegar imediatamente. Pressione `Esc` para fechar.
 
 ---
 
