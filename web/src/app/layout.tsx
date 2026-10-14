@@ -28,6 +28,7 @@ export function AppLayout({ children, currentPath, onNavigate }: LayoutProps) {
   const [tempOp, setTempOp] = useState(operatorName)
 
   const navItems = [
+    { label: 'Manifesto', path: '/', icon: ShieldCheck },
     { label: 'Dashboard', path: '/dashboard', icon: Activity },
     { label: 'Handoff Queue', path: '/handoff', icon: Users },
     { label: 'Playground', path: '/chat', icon: Bot },
@@ -48,7 +49,7 @@ export function AppLayout({ children, currentPath, onNavigate }: LayoutProps) {
         {/* Brand */}
         <div className="flex items-center gap-6">
           <div
-            onClick={() => onNavigate('/dashboard')}
+            onClick={() => onNavigate('/')}
             className="flex items-center gap-2.5 cursor-pointer group"
           >
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 to-cyan-500 text-white shadow-md shadow-indigo-500/20 group-hover:shadow-indigo-500/40 transition-all">
