@@ -4,23 +4,31 @@ Enterprise Single Page Application (SPA) for the AI Agent 24/7 platform, deliver
 
 ---
 
-## 1. Technology Stack
+## 1. Technology Stack & Creative Design System
 
-- **Core:** React 19 with TypeScript in strict mode
-- **Build Tool:** Vite
-- **Routing:** TanStack Router (type-safe routing)
+- **Art Direction:** Dark Editorial Brutalist com paleta **Acid Volt & Obsidian Carbon** (`#040405` e `#D4FF00`).
+- **Core:** React 19 com TypeScript em modo estrito
+- **Smooth Scroll & Motion:** Lenis smooth scroll, Framer Motion com easing editorial `[0.76, 0, 0.24, 1]`, cursor magnético contextual e malha topográfica 2D reativa em canvas.
+- **Build Tool:** Vite com proxy dinâmico integrado para desenvolvimento
+- **Routing:** TanStack Router & roteamento de rota SPA limpo
 - **Server State:** TanStack Query (caching, background refetching, optimistic updates)
-- **Client State:** Zustand (operator credentials and UI state persisted in `localStorage`)
-- **Forms & Schema Validation:** React Hook Form with Zod schemas
-- **Component Primitives:** Radix UI accessible headless primitives (shadcn/ui architecture)
-- **Styling:** Tailwind CSS with custom HSL design tokens, native dark mode, and glassmorphism
-- **Typography:** Space Grotesk (display), Inter (interface), JetBrains Mono (code/metrics)
-- **Animations:** Framer Motion for micro-interactions and transitions
-- **Notifications:** Sonner toasts
-- **Command Palette:** cmdk (`Ctrl+K` / `Cmd+K` global quick launcher)
-- **Type Generation:** openapi-typescript (fully typed client from backend OpenAPI specification)
-- **Unit Testing:** Vitest with React Testing Library and JSDOM
-- **Linter & Architecture Guard:** ESLint with `eslint-plugin-boundaries`
+- **Client State:** Zustand (credenciais do operador e estado da UI em `localStorage`)
+- **Forms & Schema Validation:** React Hook Form com esquemas Zod
+- **Typography:** Instrument Serif (display), Syne (subtítulos e masthead), Space Grotesk (corpo) e JetBrains Mono (código e telemetria)
+- **Command Palette:** cmdk (`Ctrl+K` / `Cmd+K` terminal de comandos rápido)
+- **Unit Testing:** Vitest com React Testing Library e JSDOM (100% dos testes passando)
+
+---
+
+## 2. Visual Tour das Telas
+
+| Tela / Módulo | Captura em Alta Resolução |
+| :--- | :--- |
+| **01. Início / Manifesto (`/`)** | ![Início](../docs/images/preview-hero.png) |
+| **02. Telemetria (`/dashboard`)** | ![Telemetria](../docs/images/preview-dashboard.png) |
+| **03. Chat do Agente (`/chat`)** | ![Chat](../docs/images/preview-chat.png) |
+| **04. Atendimento Humano (`/handoff`)** | ![Handoff](../docs/images/preview-handoff.png) |
+| **05. Ferramentas (`/tools`)** | ![Ferramentas](../docs/images/preview-tools.png) |
 
 ---
 

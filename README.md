@@ -17,34 +17,39 @@ Autonomous enterprise artificial intelligence platform for conversational custom
 
 ---
 
+![AI Agent 24/7 Web Interface](docs/images/preview-hero.png)
+
+---
+
 ## Table of Contents
 
 - [1. Overview](#1-overview)
-- [2. System Architecture](#2-system-architecture)
-- [3. State Machine & Decision Graph (LangGraph)](#3-state-machine--decision-graph-langgraph)
-- [4. Core Modules & Capabilities](#4-core-modules--capabilities)
-  - [4.1 Real-Time Voice Processing (STT + TTS)](#41-real-time-voice-processing-stt--tts)
-  - [4.2 Headless Browser Automation (Playwright)](#42-headless-browser-automation-playwright)
-  - [4.3 Runtime Dynamic Tool Synthesis](#43-runtime-dynamic-tool-synthesis)
-  - [4.4 Automatic Language Detection & Internationalization](#44-automatic-language-detection--internationalization)
-  - [4.5 Throughput Control & Rate Limiting](#45-throughput-control--rate-limiting)
-  - [4.6 Two-Tier Memory Architecture](#46-two-tier-memory-architecture)
-  - [4.7 Human Handoff Escalation Protocol](#47-human-handoff-escalation-protocol)
-- [5. Security & Infrastructure Hardening](#5-security--infrastructure-hardening)
-- [6. Observability & Telemetry](#6-observability--telemetry)
-- [7. Tool Catalog (Tool Calling)](#7-tool-catalog-tool-calling)
-- [8. Supported Integration Channels](#8-supported-integration-channels)
-- [9. Installation & Deployment](#9-installation--deployment)
-  - [9.1 Prerequisites](#91-prerequisites)
-  - [9.2 Local Execution with Python](#92-local-execution-with-python)
-  - [9.3 Modern SPA Frontend (React + TypeScript)](#93-modern-spa-frontend-react--typescript)
-  - [9.4 Docker Compose Orchestration](#94-docker-compose-orchestration)
-  - [9.5 Monitoring Stack (Grafana + Prometheus)](#95-monitoring-stack-grafana--prometheus)
-  - [9.6 Unified Environment Variables Reference](#96-unified-environment-variables-reference)
-- [10. REST API & WebSocket Specification](#10-rest-api--websocket-specification)
-- [11. Test Suite & Quality Assurance](#11-test-suite--quality-assurance)
-- [12. Repository Structure](#12-repository-structure)
-- [13. License](#13-license)
+- [2. Visual Tour & Interface Guide (Painel Web)](#2-visual-tour--interface-guide-painel-web)
+- [3. System Architecture](#3-system-architecture)
+- [4. State Machine & Decision Graph (LangGraph)](#4-state-machine--decision-graph-langgraph)
+- [5. Core Modules & Capabilities](#5-core-modules--capabilities)
+  - [5.1 Real-Time Voice Processing (STT + TTS)](#51-real-time-voice-processing-stt--tts)
+  - [5.2 Headless Browser Automation (Playwright)](#52-headless-browser-automation-playwright)
+  - [5.3 Runtime Dynamic Tool Synthesis](#53-runtime-dynamic-tool-synthesis)
+  - [5.4 Automatic Language Detection & Internationalization](#54-automatic-language-detection--internationalization)
+  - [5.5 Throughput Control & Rate Limiting](#55-throughput-control--rate-limiting)
+  - [5.6 Two-Tier Memory Architecture](#56-two-tier-memory-architecture)
+  - [5.7 Human Handoff Escalation Protocol](#57-human-handoff-escalation-protocol)
+- [6. Security & Infrastructure Hardening](#6-security--infrastructure-hardening)
+- [7. Observability & Telemetry](#7-observability--telemetry)
+- [8. Tool Catalog (Tool Calling)](#8-tool-catalog-tool-calling)
+- [9. Supported Integration Channels](#9-supported-integration-channels)
+- [10. Installation & Deployment](#10-installation--deployment)
+  - [10.1 Prerequisites](#101-prerequisites)
+  - [10.2 Local Execution with Python](#102-local-execution-with-python)
+  - [10.3 Modern SPA Frontend (React + TypeScript)](#103-modern-spa-frontend-react--typescript)
+  - [10.4 Docker Compose Orchestration](#104-docker-compose-orchestration)
+  - [10.5 Monitoring Stack (Grafana + Prometheus)](#105-monitoring-stack-grafana--prometheus)
+  - [10.6 Unified Environment Variables Reference](#106-unified-environment-variables-reference)
+- [11. REST API & WebSocket Specification](#11-rest-api--websocket-specification)
+- [12. Test Suite & Quality Assurance](#12-test-suite--quality-assurance)
+- [13. Repository Structure](#13-repository-structure)
+- [14. License](#14-license)
 
 ---
 
@@ -62,7 +67,86 @@ Autonomous enterprise artificial intelligence platform for conversational custom
 
 ---
 
-## 2. System Architecture
+## 2. Visual Tour & Interface Guide (Painel Web)
+
+A interface do **AI Agent 24/7** foi construída sob uma direção de arte **Dark Editorial Brutalista** com a paleta **Acid Volt & Obsidian Carbon** (`#040405` e `#D4FF00`). Todo o painel está disponível em Português e conta com ferramentas visuais e operacionais prontas para uso.
+
+Abaixo você confere o que cada tela faz e como realizar cada ação passo a passo:
+
+### 2.1 Início & Manifesto do Sistema (`/`)
+![Início](docs/images/preview-hero.png)
+
+- **O que esta tela faz:** É a página de apresentação do sistema. Nela você encontra a visão geral de arquitetura, o pipeline de dados em 4 etapas (Ingresso seguro, Raciocínio com IA, Memória persistente e Transbordo humano) e uma área de testes interativa.
+- **Como usar:**
+  - Role a página para inspecionar os cartões do pipeline com especificações técnicas e latências de cada etapa.
+  - Passe o mouse sobre o cartão central para deformar interativamente a malha neural 2D a 60 FPS.
+  - No formulário do rodapé, digite qualquer pergunta no campo de teste rápido (ex: *"Como você ajuda a atender meus clientes?"*) e clique em **[ENVIAR PERGUNTA]** para ver a resposta imediata do robô.
+
+---
+
+### 2.2 Painel de Telemetria & Métricas (`/dashboard`)
+![Painel de Telemetria](docs/images/preview-dashboard.png)
+
+- **O que esta tela faz:** Funciona como o centro de monitoramento do robô. Apresenta indicadores em tempo real (KPIs) sobre volume de conversas, chamados humanos pendentes, ferramentas ativas e bloqueios de segurança.
+- **Significado de cada indicador:**
+  - **Processed Requests (Conversas Atendidas):** Total de turnos e mensagens que o robô processou e respondeu.
+  - **Active Human Tickets (Chamados com Atendente):** Quantos clientes precisam da atenção de uma pessoa real agora (casos de insatisfação, pedidos de cancelamento, etc.).
+  - **Registered Tools (Habilidades Ativas):** Funções nativas e dinâmicas que o robô sabe acionar autonomamente.
+  - **Rate Limit Blocks (Bloqueios de Segurança):** Mensagens em excesso bloqueadas pelo limitador de taxa para proteger o servidor contra sobrecarga.
+- **Como usar:**
+  - Clique em **[ATUALIZAR DADOS]** para sincronizar o status mais recente do servidor.
+  - Clique em **[PAINEL GRAFANA]** para abrir os gráficos analíticos em tempo real (na porta 3000).
+  - A caixa **Registro Técnico (Prometheus)** exibe o log bruto de métricas para desenvolvedores; você pode usar o botão **[COPIAR TUDO]** para exportar os dados brutos.
+
+---
+
+### 2.3 Chat do Agente & Área de Testes (`/chat`)
+![Chat do Agente](docs/images/preview-chat.png)
+
+- **O que esta tela faz:** Ambiente interativo para conversar diretamente com o robô e testar como ele se comportará com seus clientes reais.
+- **Como usar passo a passo:**
+  1. **Envio manual:** Digite qualquer dúvida ou instrução na linha de comando inferior (ex: *"Vocês atendem aos sábados?"*) e pressione Enter ou clique em **[ENVIAR]**.
+  2. **Exemplos rápidos prontos:** Use a barra de atalhos logo acima da digitação:
+     - `[1. TESTAR TRANSFERÊNCIA HUMANA]`: Envia uma mensagem de cancelamento (*"Quero cancelar meu contrato..."*). Observe o alerta amarelo que surge na tela e a criação automática do chamado na fila de atendimento!
+     - `[2. LISTAR HABILIDADES DO ROBÔ]`: O agente lista todas as ferramentas que possui ativas.
+     - `[3. PEDIR BUSCA NA WEB]`: O agente executa uma pesquisa na internet e sintetiza o resultado.
+  3. **Reiniciar conversa:** Clique em **[NOVA CONVERSA]** no topo para limpar a memória temporária da sessão e iniciar um novo teste.
+
+---
+
+### 2.4 Fila de Atendimento Humano (Handoff) (`/handoff`)
+![Fila de Atendimento Humano](docs/images/preview-handoff.png)
+
+- **O que esta tela faz:** Central de atendimento onde operadores e atendentes assumem conversas com clientes que o robô pausou para não cometer erros (por exemplo: clientes solicitando cancelamento, com problemas complexos ou que pediram expressamente para falar com uma pessoa).
+- **Como atender um cliente passo a passo:**
+  1. **Coluna da esquerda:** Visualize a lista de chamados aguardando. Você pode filtrar por `[TODOS]`, `[ABERTOS]`, `[ASSUMIDOS]` ou `[FINALIZADOS]`.
+  2. **Inspecione a conversa:** Clique no chamado do cliente para carregar todo o histórico no centro da tela.
+  3. **Assuma o atendimento:** Clique no botão **[ASSUMIR ESTE ATENDIMENTO]** para que seus colegas saibam que você é o atendente responsável.
+  4. **Responda ao cliente:** Digite sua resposta na barra inferior e clique em **[ENVIAR RESPOSTA]**. A mensagem é despachada diretamente para o canal do cliente (WhatsApp, Web, Slack, etc.).
+  5. **Finalize o chamado:** Quando o problema for resolvido, clique no botão verde **[FINALIZAR CHAMADO]** para encerrar o ticket.
+
+---
+
+### 2.5 Matriz de Ferramentas & Habilidades (`/tools`)
+![Matriz de Ferramentas](docs/images/preview-tools.png)
+
+- **O que esta tela faz:** Catálogo de todas as habilidades extras que o robô pode chamar durante uma conversa (busca na web, previsão do tempo, consulta a banco de dados ou sistemas internos da sua empresa).
+- **Como cadastrar uma nova ferramenta (sem programar):**
+  1. Clique no botão **[+ CADASTRAR NOVA HABILIDADE]** no topo direito.
+  2. **Nome da Ferramenta:** Insira um nome curto em minúsculas (ex: `consulta_estoque`, `preco_dolar`).
+  3. **O que esta ferramenta faz?:** Escreva uma frase explicativa clara (ex: *"Consulta a quantidade disponível de um produto no estoque da loja"*). O robô lê essa descrição para saber quando deve acionar a ferramenta!
+  4. **Link da API (URL):** O endereço web onde o robô buscará os dados.
+  5. Clique em **[CADASTRAR HABILIDADE]**. O robô passa a acionar a nova função autonomamente nas conversas.
+
+---
+
+### 2.6 Atalhos Globais & Identificação do Atendente
+- **Busca Rápida (`Ctrl + K`):** Abra o terminal de comandos de qualquer tela para navegar instantaneamente para qualquer página.
+- **Identificação do Atendente:** Clique no botão **`ATENDENTE: ...`** no canto superior direito para definir o seu nome (ex: `Caio`). É essa assinatura que o cliente verá quando você responder na fila humana.
+
+---
+
+## 3. System Architecture
 
 Data flow across system layers is decoupled into modular tiers:
 
