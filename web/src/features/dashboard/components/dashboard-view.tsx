@@ -1,5 +1,5 @@
-import { ExternalLink, Radio, RefreshCw } from 'lucide-react'
-import { Badge, Button, ErrorState, Skeleton } from '@/shared/ui'
+import { ExternalLink, RefreshCw, HelpCircle, Activity, ShieldCheck, Zap } from 'lucide-react'
+import { Button, ErrorState, Skeleton } from '@/shared/ui'
 import { useDashboardMetrics } from '../api/use-dashboard-metrics'
 import { KpiGrid } from './kpi-grid'
 import { MetricsSnapshot } from './metrics-snapshot'
@@ -11,8 +11,8 @@ export function DashboardView() {
     return (
       <div className="p-8 max-w-5xl mx-auto">
         <ErrorState
-          title="TELEMETRY FEED DISCONNECTED"
-          message={error instanceof Error ? error.message : 'Could not fetch Prometheus telemetry data.'}
+          title="FALHA NA CONEXÃO COM O SERVIDOR"
+          message={error instanceof Error ? error.message : 'Não foi possível buscar as métricas do servidor.'}
           onRetry={() => refetch()}
         />
       </div>
@@ -25,15 +25,14 @@ export function DashboardView() {
       <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between border-b border-[#2B2B2B] pb-8">
         <div>
           <div className="flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-[#818181] mb-2">
-            <span>[01 // TELEMETRY]</span>
-            <span>REAL-TIME PIPELINE METRICS</span>
+            <span>[01 // TELEMETRIA]</span>
+            <span>PAINEL DE CONTROLE EM TEMPO REAL</span>
           </div>
-          <h1 className="font-display text-5xl sm:text-7xl font-normal tracking-tight text-[#EDEDED] leading-none">
-            System Observability
+          <h1 className="font-display text-4xl sm:text-6xl md:text-7xl font-normal tracking-tight text-[#EDEDED] leading-none">
+            Visão Geral do Robô
           </h1>
           <p className="mt-3 font-sans text-sm text-[#A0A0A0] max-w-2xl leading-relaxed">
-            Continuous telemetry and anomaly interception across all asynchronous message queues, 
-            tool executions, and human intervention handoffs.
+            Acompanhe quantas pessoas o seu agente atendeu, se há clientes aguardando um atendente humano e quais ferramentas estão funcionando.
           </p>
         </div>
 
@@ -44,11 +43,11 @@ export function DashboardView() {
             onClick={() => refetch()}
             disabled={isFetching}
             data-cursor
-            data-cursor-label="sync"
+            data-cursor-label="atualizar"
             className="gap-2"
           >
             <RefreshCw className={`h-3 w-3 ${isFetching ? 'animate-spin' : ''}`} />
-            <span>SYNC FEED</span>
+            <span>ATUALIZAR DADOS</span>
           </Button>
 
           <Button
@@ -56,11 +55,11 @@ export function DashboardView() {
             size="sm"
             asChild
             data-cursor
-            data-cursor-label="raw"
+            data-cursor-label="métricas"
             className="gap-2"
           >
             <a href="/metrics" target="_blank" rel="noreferrer">
-              RAW /METRICS <ExternalLink className="h-3 w-3" />
+              DADOS TÉCNICOS /METRICS <ExternalLink className="h-3 w-3" />
             </a>
           </Button>
 
@@ -73,9 +72,41 @@ export function DashboardView() {
             className="gap-2"
           >
             <a href="http://localhost:3000" target="_blank" rel="noreferrer">
-              GRAFANA UI <ExternalLink className="h-3 w-3" />
+              PAINEL GRAFANA <ExternalLink className="h-3 w-3" />
             </a>
           </Button>
+        </div>
+      </div>
+
+      {/* Guia Didático para Usuário Leigo */}
+      <div className="border border-[#2B2B2B] bg-[#0D0D0D] p-6 text-sm text-[#A0A0A0] leading-relaxed relative">
+        <span className="absolute top-0 right-0 text-[10px] font-mono text-[#595959] p-2 leading-none">+</span>
+        <div className="flex items-center gap-2 font-mono text-xs uppercase text-[#C6F432] font-bold mb-3">
+          <HelpCircle className="h-4 w-4" />
+          <span>GUIA RÁPIDO: O QUE SIGNIFICA CADA INFORMAÇÃO NESTA TELA?</span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 font-sans text-xs">
+          <div className="border-l border-[#2B2B2B] pl-4">
+            <div className="flex items-center gap-1.5 text-[#EDEDED] font-semibold mb-1">
+              <Activity className="h-3.5 w-3.5 text-[#C6F432]" />
+              <span>1. Atendimentos & Respostas</span>
+            </div>
+            <p>Mostra o total de mensagens que o robô já trocou com os clientes. Quanto mais esse número sobe, mais trabalho o robô poupou da sua equipe.</p>
+          </div>
+          <div className="border-l border-[#2B2B2B] pl-4">
+            <div className="flex items-center gap-1.5 text-[#EDEDED] font-semibold mb-1">
+              <ShieldCheck className="h-3.5 w-3.5 text-amber-400" />
+              <span>2. Chamados com Humanos</span>
+            </div>
+            <p>Se o cliente pediu para cancelar ou solicitou um atendente, o robô cria um chamado na aba <strong>&quot;Atendimento Humano&quot;</strong> para você responder.</p>
+          </div>
+          <div className="border-l border-[#2B2B2B] pl-4">
+            <div className="flex items-center gap-1.5 text-[#EDEDED] font-semibold mb-1">
+              <Zap className="h-3.5 w-3.5 text-[#C6F432]" />
+              <span>3. Habilidades do Robô</span>
+            </div>
+            <p>Indica as ferramentas extras que o robô tem permissão para acionar (como buscar no Google, ver banco de dados ou verificar a previsão do tempo).</p>
+          </div>
         </div>
       </div>
 
@@ -83,10 +114,10 @@ export function DashboardView() {
       <div>
         <div className="flex justify-between items-center mb-4">
           <span className="font-mono text-xs uppercase tracking-widest text-[#818181]">
-            // CORE TELEMETRY INDICES
+            // INDICADORES PRINCIPAIS DE DESEMPENHO
           </span>
           <span className="font-mono text-[10px] text-[#C6F432]">
-            [● LIVE STREAM ACTIVE]
+            [● SERVIDOR ATIVO E MONITORANDO]
           </span>
         </div>
 
@@ -105,10 +136,10 @@ export function DashboardView() {
       <div>
         <div className="flex justify-between items-center mb-4">
           <span className="font-mono text-xs uppercase tracking-widest text-[#818181]">
-            // PROMETHEUS SCRAPE BUFFER
+            // REGISTRO TÉCNICO BRUTO DO SERVIDOR (PROMETHEUS)
           </span>
           <span className="font-mono text-[10px] text-[#818181]">
-            FORMAT: OPENMETRICS-TEXT/PLAIN
+            FORMATO: TEXTO PURO (PARA DESENVOLVEDORES)
           </span>
         </div>
 

@@ -36,41 +36,48 @@ export function TicketList({
     )
   })
 
+  const filterLabels: Record<string, string> = {
+    '': 'TODOS',
+    open: 'ABERTOS',
+    claimed: 'ASSUMIDOS',
+    resolved: 'FINALIZADOS',
+  }
+
   return (
     <div className="flex h-full flex-col border-r border-[#2B2B2B] bg-[#000000]">
       {/* Search & Status Filters */}
       <div className="flex flex-col gap-3 p-4 border-b border-[#2B2B2B]">
-        <div className="flex items-center gap-2 font-mono text-[10px] text-[#818181] uppercase tracking-wider">
-          <span>// TRIAGE QUEUE</span>
-          <span>({filtered.length} ITEMS)</span>
+        <div className="flex items-center justify-between font-mono text-[10px] text-[#818181] uppercase tracking-wider">
+          <span>// FILA DE CHAMADOS</span>
+          <span>({filtered.length} ATIVOS)</span>
         </div>
 
         <div className="relative">
           <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-[#818181]" />
           <Input
-            placeholder="Search tickets, sessions..."
+            placeholder="Buscar por cliente, id, mensagem..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             className="pl-8 h-8 text-xs bg-[#0D0D0D]"
           />
         </div>
 
-        {/* Filter Pills */}
+        {/* Filter Pills in Portuguese */}
         <div className="flex gap-1 overflow-x-auto text-xs">
           {(['', 'open', 'claimed', 'resolved'] as const).map((s) => (
             <button
               key={s}
               onClick={() => onFilterChange(s)}
               data-cursor
-              data-cursor-label="filter"
+              data-cursor-label="filtro"
               className={cn(
-                'px-2.5 py-1 font-mono text-[11px] uppercase transition-colors',
+                'px-2.5 py-1 font-mono text-[10px] uppercase transition-colors shrink-0',
                 statusFilter === s
                   ? 'bg-[#EDEDED] text-black font-bold'
                   : 'bg-[#0D0D0D] border border-[#2B2B2B] text-[#818181] hover:text-[#EDEDED]'
               )}
             >
-              {s ? `[${s}]` : '[ALL]'}
+              [{filterLabels[s]}]
             </button>
           ))}
         </div>
@@ -86,7 +93,7 @@ export function TicketList({
           </div>
         ) : filtered.length === 0 ? (
           <div className="p-8 text-center font-mono text-xs text-[#818181]">
-            // NO ACTIVE TICKETS IN THIS FILTER
+            // NENHUM CHAMADO ENCONTRADO NESTE FILTRO
           </div>
         ) : (
           filtered.map((ticket) => {
@@ -98,7 +105,7 @@ export function TicketList({
                 key={ticket.id}
                 onClick={() => onSelectTicket(ticket.id)}
                 data-cursor
-                data-cursor-label="inspect"
+                data-cursor-label="atender"
                 className={cn(
                   'cursor-pointer p-4 transition-colors',
                   isSelected
@@ -121,7 +128,7 @@ export function TicketList({
                 </div>
 
                 <p className="mt-2 font-sans text-xs text-[#A0A0A0] line-clamp-2 leading-relaxed">
-                  {lastMsg ? truncate(lastMsg.content, 90) : 'No recorded messages'}
+                  {lastMsg ? truncate(lastMsg.content, 90) : 'Sem mensagens registradas'}
                 </p>
 
                 <div className="mt-3 flex items-center justify-between font-mono text-[10px]">
@@ -138,11 +145,13 @@ export function TicketList({
                     {ticket.status === 'open' ? 'Open' : ticket.status === 'claimed' ? 'Claimed' : 'Resolved'}
                   </span>
 
-                  {ticket.assignee && (
-                    <span className="flex items-center gap-1 text-[#818181]">
-                      <UserCheck className="h-3 w-3 text-[#C6F432]" />
+                  {ticket.assignee ? (
+                    <span className="flex items-center gap-1 text-[#C6F432]">
+                      <UserCheck className="h-3 w-3" />
                       {ticket.assignee}
                     </span>
+                  ) : (
+                    <span className="text-amber-400 font-mono text-[10px]">[AGUARDANDO ATENDENTE]</span>
                   )}
                 </div>
               </div>

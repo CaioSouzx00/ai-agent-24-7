@@ -1,4 +1,4 @@
-import { Terminal, RefreshCw, Copy, Check } from 'lucide-react'
+import { Terminal, RefreshCw, Copy, Check, Info } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@/shared/ui'
 
@@ -26,12 +26,14 @@ export function MetricsSnapshot({ rawText, isFetching, onRefresh }: MetricsSnaps
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#2B2B2B] pb-4 mb-4">
         <div className="flex items-center gap-3">
           <Terminal className="h-4 w-4 text-[#C6F432]" />
-          <span className="font-mono text-xs uppercase tracking-wider text-[#EDEDED] font-bold">
-            Telemetry Feed Buffer [raw-stream]
-          </span>
-          <span className="font-mono text-[10px] text-[#818181] border border-[#2B2B2B] px-1.5 py-0.5">
-            BUFFER: {rawText ? `${(rawText.length / 1024).toFixed(1)} KB` : 'EMPTY'}
-          </span>
+          <div>
+            <span className="font-mono text-xs uppercase tracking-wider text-[#EDEDED] font-bold block">
+              Registro Técnico do Servidor [Formato Prometheus]
+            </span>
+            <span className="font-mono text-[10px] text-[#818181]">
+              TAMANHO DO BUFFER: {rawText ? `${(rawText.length / 1024).toFixed(1)} KB` : 'VAZIO'}
+            </span>
+          </div>
         </div>
 
         <div className="flex items-center gap-2">
@@ -41,11 +43,11 @@ export function MetricsSnapshot({ rawText, isFetching, onRefresh }: MetricsSnaps
             onClick={handleCopy}
             disabled={!rawText}
             data-cursor
-            data-cursor-label="copy"
+            data-cursor-label="copiar"
             className="gap-1.5 text-xs text-[#818181] hover:text-[#EDEDED]"
           >
             {copied ? <Check className="h-3.5 w-3.5 text-[#C6F432]" /> : <Copy className="h-3.5 w-3.5" />}
-            <span>{copied ? 'COPIED' : 'COPY'}</span>
+            <span>{copied ? 'COPIADO' : 'COPIAR TUDO'}</span>
           </Button>
 
           {onRefresh && (
@@ -55,25 +57,32 @@ export function MetricsSnapshot({ rawText, isFetching, onRefresh }: MetricsSnaps
               onClick={onRefresh}
               disabled={isFetching}
               data-cursor
-              data-cursor-label="refresh"
+              data-cursor-label="atualizar"
               className="gap-1.5 text-xs"
             >
               <RefreshCw className={`h-3 w-3 ${isFetching ? 'animate-spin' : ''}`} />
-              <span>REFRESH</span>
+              <span>RECARREGAR</span>
             </Button>
           )}
         </div>
       </div>
 
+      <div className="mb-3 p-3 bg-[#000000] border border-[#1A1A1A] font-mono text-xs text-[#A0A0A0] flex items-center gap-2">
+        <Info className="h-4 w-4 text-[#C6F432] shrink-0" />
+        <span>
+          <strong>Dica para quem não é da área técnica:</strong> Este bloco contém os dados brutos de telemetria gerados pelo backend para gráficos externos (como Grafana e Datadog). Você pode ignorar esta caixa se só precisa acompanhar o robô no dia a dia.
+        </span>
+      </div>
+
       <div className="relative border border-[#1A1A1A] bg-[#000000] p-4 font-mono text-xs text-[#A0A0A0]">
-        <pre className="h-[360px] overflow-auto whitespace-pre-wrap leading-relaxed selection:bg-[#C6F432] selection:text-black">
-          {rawText ? rawText.slice(0, 5000) : '// No metrics received. Ensure FastAPI daemon is running on port 8080.'}
+        <pre className="h-[300px] overflow-auto whitespace-pre-wrap leading-relaxed selection:bg-[#C6F432] selection:text-black">
+          {rawText ? rawText.slice(0, 5000) : '// Aguardando dados do servidor. Certifique-se de que o backend FastAPI está em execução.'}
         </pre>
       </div>
 
       <div className="mt-3 flex justify-between items-center font-mono text-[10px] text-[#818181]">
-        <span>SCRAPE PROTOCOL: HTTP/1.1 GET /METRICS</span>
-        <span>SECURITY: LOCALHOST WHITELIST</span>
+        <span>PROTOCOLO: HTTP/1.1 GET /METRICS</span>
+        <span>SEGURANÇA: LOCALHOST</span>
       </div>
     </div>
   )

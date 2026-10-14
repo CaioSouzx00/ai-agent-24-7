@@ -41,8 +41,8 @@ export function TicketReplyBar({
           <Input
             placeholder={
               isResolved
-                ? '// TICKET RESOLVED — REOPEN REQUIRED TO POST'
-                : 'Enter operator reply to customer (Press Enter to dispatch)...'
+                ? '// ESTE CHAMADO JÁ FOI FINALIZADO'
+                : 'Digite sua resposta para enviar diretamente ao cliente (Pressione Enter para enviar)...'
             }
             value={text}
             onChange={(e) => setText(e.target.value)}
@@ -55,17 +55,17 @@ export function TicketReplyBar({
             variant="default"
             size="sm"
             data-cursor
-            data-cursor-label="send"
+            data-cursor-label="enviar"
             className="gap-2 shrink-0 font-mono text-xs"
           >
             <Send className="h-3.5 w-3.5" />
-            <span>DISPATCH</span>
+            <span>ENVIAR RESPOSTA</span>
           </Button>
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3 pt-1 font-mono text-xs">
           <div className="text-[#818181] text-[11px]">
-            SIGNATURE: <span className="text-[#EDEDED] font-bold uppercase">{operatorName}</span>
+            RESPONSÁVEL: <span className="text-[#EDEDED] font-bold uppercase">{operatorName}</span>
           </div>
 
           <div className="flex items-center gap-2">
@@ -77,11 +77,11 @@ export function TicketReplyBar({
                 onClick={() => onClaim(operatorName)}
                 disabled={isClaiming}
                 data-cursor
-                data-cursor-label="claim"
+                data-cursor-label="assumir"
                 className="gap-1.5 text-xs text-[#C6F432] border-[#C6F432]/40 hover:bg-[#C6F432]/10"
               >
                 <UserCheck className="h-3.5 w-3.5" />
-                <span>CLAIM TICKET</span>
+                <span>ASSUMIR ESTE ATENDIMENTO</span>
               </Button>
             )}
 
@@ -93,11 +93,11 @@ export function TicketReplyBar({
                 onClick={onResolve}
                 disabled={isResolving}
                 data-cursor
-                data-cursor-label="resolve"
+                data-cursor-label="finalizar"
                 className="gap-1.5 text-xs text-emerald-400 border-emerald-800/40 hover:bg-emerald-950/20"
               >
                 <CheckCircle2 className="h-3.5 w-3.5" />
-                <span>RESOLVE TICKET</span>
+                <span>FINALIZAR CHAMADO</span>
               </Button>
             )}
           </div>

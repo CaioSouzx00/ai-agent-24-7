@@ -12,29 +12,29 @@ export function KpiGrid({ stats }: KpiGridProps) {
       <StatCard
         title="Processed Requests"
         value={stats ? stats.requestsTotal : '--'}
-        hint="// 01: Total conversational turns executed through the reasoning engine"
+        hint="Conversas Atendidas: Total de turnos e mensagens que o robô processou."
         icon={<Activity className="h-4 w-4" />}
         valueColor="text-[#EDEDED]"
-        trend="+14% /24H"
+        trend="+14% /24h"
       />
       <StatCard
         title="Active Human Tickets"
         value={stats ? stats.activeTickets : '--'}
-        hint="// 02: Conversations currently escalated to human triage"
+        hint="Chamados Humanos: Clientes que pediram atendente ou querem cancelar."
         icon={<Users className="h-4 w-4" />}
         valueColor="text-[#EDEDED]"
       />
       <StatCard
         title="Registered Tools"
         value={stats ? stats.registeredToolsCount : '--'}
-        hint="// 03: Static deterministic + dynamic synthesized tools"
+        hint="Habilidades Ativas: Funções e superpoderes que o robô sabe executar."
         icon={<Wrench className="h-4 w-4" />}
         valueColor="text-[#EDEDED]"
       />
       <StatCard
         title="Rate Limit Blocks"
         value={stats ? stats.rateLimitExceededCount : '--'}
-        hint="// 04: HTTP 429 and signature security blocks intercepted"
+        hint="Bloqueios de Segurança: Mensagens abusivas ou em excesso bloqueadas."
         icon={<ShieldAlert className="h-4 w-4" />}
         valueColor="text-[#EDEDED]"
       />

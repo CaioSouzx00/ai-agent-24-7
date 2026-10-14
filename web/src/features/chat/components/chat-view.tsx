@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Terminal, Send, AlertTriangle, RefreshCw, Sparkles, Copy, Check, ArrowRight } from 'lucide-react'
+import { Send, AlertTriangle, RefreshCw, Copy, Check, ArrowRight, HelpCircle, MessageSquare, Bot, UserCheck } from 'lucide-react'
 import { Button, Input } from '@/shared/ui'
 import { sendChatMessage } from '../api/chat-api'
 import type { ChatMessage } from '../schemas/chat-schemas'
@@ -12,7 +12,7 @@ export function ChatView() {
     {
       id: 'init',
       role: 'assistant',
-      content: 'Autonomous neural agent online. Reasoning core primed. Ready for dispatch.',
+      content: 'Olá! Sou o seu Agente Autônomo 24/7. Estou pronto para responder dúvidas, executar ferramentas ou acionar um atendente humano se necessário. Como posso ajudar você hoje?',
       timestamp: Date.now(),
     },
   ])
@@ -56,11 +56,11 @@ export function ChatView() {
         setHandoffTriggered(true)
       }
     } catch (err: unknown) {
-      const errorText = err instanceof Error ? err.message : 'Inference pipeline failure.'
+      const errorText = err instanceof Error ? err.message : 'Falha na comunicação com o robô.'
       const errorMsg: ChatMessage = {
         id: Math.random().toString(36),
         role: 'system',
-        content: `KERNEL ERROR: ${errorText}`,
+        content: `ERRO DE PROCESSAMENTO: ${errorText}. Verifique se o servidor backend está ligado.`,
         timestamp: Date.now(),
       }
       setMessages((prev) => [...prev, errorMsg])
@@ -75,7 +75,7 @@ export function ChatView() {
       {
         id: 'init',
         role: 'assistant',
-        content: 'Session buffer purged. Memory state reset to default. Enter instruction.',
+        content: 'Conversa reiniciada! A memória temporária desta sessão foi limpa. O que gostaria de testar agora?',
         timestamp: Date.now(),
       },
     ])
@@ -98,24 +98,27 @@ export function ChatView() {
       <div className="flex flex-wrap items-end justify-between gap-4 border-b border-[#2B2B2B] pb-6">
         <div>
           <div className="flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-[#818181] mb-2">
-            <span>[03 // CONSOLE]</span>
-            <span>AUTONOMOUS INFERENCE COCKPIT</span>
+            <span>[03 // CONSOLE DE TESTES]</span>
+            <span>ÁREA DE CONVERSA COM O ROBÔ</span>
           </div>
           <h1 className="font-display text-4xl sm:text-6xl font-normal tracking-tight text-[#EDEDED] leading-none">
-            Agent Terminal
+            Chat com o Agente
           </h1>
+          <p className="mt-2 text-sm text-[#A0A0A0]">
+            Converse diretamente com o robô para ver como ele responde seus clientes em tempo real.
+          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <div className="flex items-center gap-2 border border-[#2B2B2B] bg-[#0D0D0D] px-3 py-1 font-mono text-xs">
-            <span className="text-[#818181]">SESSION:</span>
+            <span className="text-[#818181]">SESSÃO:</span>
             <span className="text-[#EDEDED] font-bold">{sessionId}</span>
             <button
               onClick={copySessionId}
               data-cursor
-              data-cursor-label="copy"
+              data-cursor-label="copiar"
               className="text-[#818181] hover:text-[#C6F432] ml-1 transition-colors"
-              title="Copy session id"
+              title="Copiar ID da sessão"
             >
               {copiedSession ? <Check className="h-3 w-3 text-[#C6F432]" /> : <Copy className="h-3 w-3" />}
             </button>
@@ -126,22 +129,35 @@ export function ChatView() {
             size="sm"
             onClick={resetSession}
             data-cursor
-            data-cursor-label="purge"
+            data-cursor-label="limpar"
             className="gap-1.5 text-xs"
           >
             <RefreshCw className="h-3 w-3" />
-            <span>PURGE BUFFER</span>
+            <span>NOVA CONVERSA</span>
           </Button>
         </div>
       </div>
 
-      {/* Handoff Banner */}
+      {/* Caixa de Ajuda para o Usuário Leigo */}
+      <div className="mt-4 border border-[#2B2B2B] bg-[#0D0D0D] p-4 text-xs text-[#A0A0A0] leading-relaxed flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="flex items-start gap-2.5">
+          <HelpCircle className="h-4 w-4 text-[#C6F432] shrink-0 mt-0.5" />
+          <div>
+            <strong className="text-[#EDEDED] block">Como testar esta tela?</strong>
+            <span>
+              Digite qualquer dúvida na barra abaixo como se fosse um cliente, ou clique em um dos exemplos rápidos (como <em>&quot;Testar Cancelamento&quot;</em>) para ver o robô transferir a conversa para a aba <strong>Atendimento Humano</strong>.
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Alerta de Transbordo Humano */}
       {handoffTriggered && (
-        <div className="mt-4 border border-amber-600/40 bg-amber-950/20 p-4 flex flex-wrap items-center justify-between gap-3 font-mono text-xs text-amber-300">
+        <div className="mt-3 border border-amber-600/50 bg-amber-950/20 p-4 flex flex-wrap items-center justify-between gap-3 font-mono text-xs text-amber-300">
           <div className="flex items-center gap-2.5">
             <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />
             <span>
-              <strong>[HUMAN ESCALATION TRIGGERED]:</strong> Ticket registered in operator queue.
+              <strong>[TRANSFERÊNCIA HUMANA ACIONADA]:</strong> O robô detectou que o cliente precisa de atenção humana e pausou as respostas automáticas.
             </span>
           </div>
           <Button
@@ -149,18 +165,18 @@ export function ChatView() {
             size="sm"
             asChild
             data-cursor
-            data-cursor-label="open"
-            className="border-amber-600/50 text-amber-300 hover:bg-amber-950/40 gap-1"
+            data-cursor-label="abrir"
+            className="border-amber-600/60 text-amber-300 hover:bg-amber-950/40 gap-1"
           >
             <a href="/handoff">
-              OPEN TRIAGE QUEUE <ArrowRight className="h-3 w-3" />
+              VER NA FILA DE ATENDIMENTO <ArrowRight className="h-3 w-3" />
             </a>
           </Button>
         </div>
       )}
 
       {/* Main Terminal Frame */}
-      <div className="flex-1 my-6 flex flex-col border border-[#2B2B2B] bg-[#0D0D0D] overflow-hidden relative">
+      <div className="flex-1 my-4 flex flex-col border border-[#2B2B2B] bg-[#0D0D0D] overflow-hidden relative">
         <span className="absolute top-0 right-0 text-[10px] font-mono text-[#595959] p-2 leading-none pointer-events-none">+</span>
         <span className="absolute bottom-0 left-0 text-[10px] font-mono text-[#595959] p-2 leading-none pointer-events-none">+</span>
 
@@ -181,10 +197,10 @@ export function ChatView() {
                 <div className="flex items-center gap-2 font-mono text-[10px] text-[#818181] mb-1.5 uppercase tracking-wider">
                   <span>
                     {isUser
-                      ? '// OPERATOR INPUT'
+                      ? '// VOCÊ (MENSAGEM DO CLIENTE)'
                       : isSystem
-                        ? '// KERNEL DIAGNOSTIC'
-                        : '// AGENT REASONING ENGINE'}
+                        ? '// AVISO DO SISTEMA'
+                        : '// RESPOSTA DO AGENTE IA'}
                   </span>
                   <span>•</span>
                   <span>{new Date(m.timestamp).toLocaleTimeString([], { hour12: false })}</span>
@@ -203,8 +219,9 @@ export function ChatView() {
                   <div className="whitespace-pre-wrap">{m.content}</div>
 
                   {m.handoff && (
-                    <div className="mt-3 pt-3 border-t border-[#2B2B2B] font-mono text-[11px] text-[#C6F432]">
-                      [STATUS: AUTOMATIC HANDOFF INITIATED // TICKET DISPATCHED]
+                    <div className="mt-3 pt-3 border-t border-[#2B2B2B] font-mono text-[11px] text-[#C6F432] flex items-center gap-1.5">
+                      <UserCheck className="h-3.5 w-3.5" />
+                      <span>[STATUS: CHAMADO CRIADO PARA ATENDENTE HUMANO]</span>
                     </div>
                   )}
                 </div>
@@ -215,39 +232,39 @@ export function ChatView() {
           {isLoading && (
             <div className="mr-auto border border-[#2B2B2B] bg-[#000000] p-4 font-mono text-xs text-[#818181] flex items-center gap-3">
               <span className="w-2 h-2 rounded-full bg-[#C6F432] animate-ping" />
-              <span>[REASONING LOOP RUNNING // TOOL SYNTHESIS IN PROGRESS...]</span>
+              <span>[ROBÔ PENSANDO E CONSULTANDO FERRAMENTAS...]</span>
             </div>
           )}
         </div>
 
-        {/* Presets Bar */}
+        {/* Exemplos Rápidos de Teste (Presets) */}
         <div className="border-t border-[#1A1A1A] bg-[#000000] px-4 py-2 flex items-center gap-2 overflow-x-auto text-xs">
           <span className="font-mono text-[10px] uppercase text-[#818181] shrink-0">
-            DISPATCH PRESETS:
+            TESTES RÁPIDOS:
           </span>
           <button
-            onClick={() => sendQuickPrompt('I want to cancel my contract and speak to a manager.')}
+            onClick={() => sendQuickPrompt('Quero cancelar meu contrato e falar com um atendente agora.')}
             data-cursor
-            data-cursor-label="preset"
+            data-cursor-label="exemplo"
             className="font-mono text-[10px] border border-[#2B2B2B] bg-[#0D0D0D] px-2 py-0.5 text-[#A0A0A0] hover:text-[#EDEDED] hover:border-[#595959] transition-colors shrink-0"
           >
-            [TEST HANDOFF TRIGGER]
+            [1. TESTAR TRANSFERÊNCIA HUMANA]
           </button>
           <button
-            onClick={() => sendQuickPrompt('List all active capabilities and registered tools.')}
+            onClick={() => sendQuickPrompt('Quais são as ferramentas e tarefas que você consegue executar?')}
             data-cursor
-            data-cursor-label="preset"
+            data-cursor-label="exemplo"
             className="font-mono text-[10px] border border-[#2B2B2B] bg-[#0D0D0D] px-2 py-0.5 text-[#A0A0A0] hover:text-[#EDEDED] hover:border-[#595959] transition-colors shrink-0"
           >
-            [INSPECT TOOL REGISTRY]
+            [2. LISTAR HABILIDADES DO ROBÔ]
           </button>
           <button
-            onClick={() => sendQuickPrompt('Search for the latest machine learning benchmarks.')}
+            onClick={() => sendQuickPrompt('Pesquise na internet as principais notícias de tecnologia de hoje.')}
             data-cursor
-            data-cursor-label="preset"
+            data-cursor-label="exemplo"
             className="font-mono text-[10px] border border-[#2B2B2B] bg-[#0D0D0D] px-2 py-0.5 text-[#A0A0A0] hover:text-[#EDEDED] hover:border-[#595959] transition-colors shrink-0"
           >
-            [INVOKE WEB SEARCH]
+            [3. PEDIR BUSCA NA WEB]
           </button>
         </div>
 
@@ -258,7 +275,7 @@ export function ChatView() {
         >
           <span className="font-mono text-sm text-[#C6F432] pl-2 select-none">&gt;</span>
           <Input
-            placeholder="Type instruction (e.g. 'Search for recent events', 'Trigger cancellation protocol')..."
+            placeholder="Digite uma mensagem para o robô (ex: 'Quero tirar uma dúvida sobre o plano', 'Quero cancelar')..."
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
             disabled={isLoading}
@@ -270,11 +287,11 @@ export function ChatView() {
             variant="default"
             size="sm"
             data-cursor
-            data-cursor-label="send"
+            data-cursor-label="enviar"
             className="gap-2 shrink-0 font-mono text-xs"
           >
             <Send className="h-3.5 w-3.5" />
-            <span>DISPATCH</span>
+            <span>ENVIAR</span>
           </Button>
         </form>
       </div>

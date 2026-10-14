@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { HelpCircle, UserCheck } from 'lucide-react'
 import { Skeleton } from '@/shared/ui'
 import { useTickets, useTicketDetail } from '../api/use-tickets'
 import { useTicketMutations } from '../api/use-ticket-mutations'
@@ -22,16 +23,16 @@ export function HandoffView() {
   if (isError) {
     return (
       <div className="p-8 max-w-5xl mx-auto font-mono text-xs text-red-400">
-        // FAILED TO QUERY HANDOFF QUEUE: {error instanceof Error ? error.message : 'Queue unreachable'}
+        // FALHA AO CONECTAR COM A FILA DE ATENDIMENTO: {error instanceof Error ? error.message : 'Fila indisponível'}
         <button onClick={() => refetch()} className="mt-4 block border border-[#2B2B2B] px-3 py-1 text-[#EDEDED]">
-          RETRY QUERY
+          TENTAR NOVAMENTE
         </button>
       </div>
     )
   }
 
   return (
-    <div className="grid h-[calc(100vh-56px)] grid-cols-1 md:grid-cols-[340px_1fr] lg:grid-cols-[380px_1fr] overflow-hidden bg-[#000000]">
+    <div className="grid h-[calc(100vh-56px)] grid-cols-1 md:grid-cols-[360px_1fr] lg:grid-cols-[400px_1fr] overflow-hidden bg-[#000000]">
       {/* Sidebar List */}
       <TicketList
         tickets={tickets}
@@ -70,17 +71,31 @@ export function HandoffView() {
             </>
           ) : (
             <div className="m-auto text-center font-mono text-xs text-[#818181] p-8">
-              // TICKET DATA UNRESOLVED
+              // DADOS DO CHAMADO NÃO PUDERAM SER CARREGADOS
             </div>
           )
         ) : (
-          <div className="m-auto text-center font-mono text-xs text-[#818181] p-8 max-w-md">
-            <span className="block text-sm text-[#EDEDED] font-syne uppercase tracking-wider mb-2">
-              [NO CONVERSATION SELECTED]
-            </span>
-            <p className="leading-relaxed">
-              Select an escalated ticket from the triage queue on the left to inspect customer context and initiate human takeover.
+          <div className="m-auto p-8 max-w-lg text-center font-sans space-y-4">
+            <div className="w-12 h-12 mx-auto rounded-none border border-[#2B2B2B] bg-[#0D0D0D] flex items-center justify-center text-[#C6F432]">
+              <UserCheck className="h-6 w-6" />
+            </div>
+            <h3 className="text-xl font-syne uppercase font-bold text-[#EDEDED]">
+              Fila de Atendimento Humano
+            </h3>
+            <p className="text-xs text-[#A0A0A0] leading-relaxed">
+              Nenhuma conversa selecionada no momento. Escolha um chamado na lista à esquerda para ler o que o cliente disse e assumir o atendimento.
             </p>
+
+            <div className="border border-[#2B2B2B] bg-[#0D0D0D] p-4 text-left font-mono text-xs text-[#818181] space-y-2">
+              <div className="flex items-center gap-1.5 text-[#EDEDED] font-bold">
+                <HelpCircle className="h-3.5 w-3.5 text-[#C6F432]" />
+                <span>COMO FUNCIONA ESTE FLUXO?</span>
+              </div>
+              <p>1. O cliente pediu cancelamento ou solicitou atendente no chat.</p>
+              <p>2. O robô pausou as respostas automáticas para não incomodar o cliente.</p>
+              <p>3. Você clica em <strong>[ASSUMIR ATENDIMENTO]</strong> e digita sua resposta.</p>
+              <p>4. Ao terminar, clique em <strong>[FINALIZAR CHAMADO]</strong>.</p>
+            </div>
           </div>
         )}
       </div>

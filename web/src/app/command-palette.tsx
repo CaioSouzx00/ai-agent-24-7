@@ -50,50 +50,50 @@ export function CommandPalette({ onNavigate }: CommandPaletteProps) {
 
         <Command className="bg-transparent text-[#EDEDED]">
           <CommandInput
-            placeholder="TYPE COMMAND OR DIRECTIVE (e.g. /dashboard, /chat)..."
+            placeholder="DIGITE PARA ONDE QUER IR (ex: /chat, /dashboard)..."
             autoFocus
             className="border-b border-[#2B2B2B] bg-[#000000] font-mono text-xs text-[#EDEDED] placeholder:text-[#818181] h-12"
           />
           <CommandList className="max-h-[300px] p-2 font-mono text-xs">
             <CommandEmpty className="p-4 text-center text-[#818181]">
-              // NO DIRECTIVES MATCH QUERY
+              // NENHUMA PÁGINA ENCONTRADA COM ESSA BUSCA
             </CommandEmpty>
 
-            <CommandGroup heading="// DIRECTORY DISPATCH">
+            <CommandGroup heading="// PÁGINAS DO SISTEMA">
               <CommandItem
                 onSelect={() => runCommand(() => onNavigate('/'))}
                 className="cursor-pointer hover:bg-[#1A1A1A] hover:text-[#C6F432] p-2 transition-colors"
               >
                 <Terminal className="mr-2 h-3.5 w-3.5 text-[#818181]" />
-                <span>[00] MANIFESTO // EDITORIAL SHOWCASE</span>
+                <span>[00] INÍCIO // APRESENTAÇÃO & MANIFESTO</span>
               </CommandItem>
               <CommandItem
                 onSelect={() => runCommand(() => onNavigate('/dashboard'))}
                 className="cursor-pointer hover:bg-[#1A1A1A] hover:text-[#C6F432] p-2 transition-colors"
               >
                 <Activity className="mr-2 h-3.5 w-3.5 text-[#818181]" />
-                <span>[01] TELEMETRY // OPERATIONS & METRICS</span>
+                <span>[01] TELEMETRIA // PAINEL GERAL & MÉTRICAS</span>
               </CommandItem>
               <CommandItem
                 onSelect={() => runCommand(() => onNavigate('/handoff'))}
                 className="cursor-pointer hover:bg-[#1A1A1A] hover:text-[#C6F432] p-2 transition-colors"
               >
                 <Users className="mr-2 h-3.5 w-3.5 text-[#818181]" />
-                <span>[02] HANDOFF // HUMAN TRIAGE COCKPIT</span>
+                <span>[02] ATENDIMENTO HUMANO // FILA DE CHAMADOS</span>
               </CommandItem>
               <CommandItem
                 onSelect={() => runCommand(() => onNavigate('/chat'))}
                 className="cursor-pointer hover:bg-[#1A1A1A] hover:text-[#C6F432] p-2 transition-colors"
               >
                 <Bot className="mr-2 h-3.5 w-3.5 text-[#818181]" />
-                <span>[03] CONSOLE // AUTONOMOUS AGENT PLAYGROUND</span>
+                <span>[03] CHAT DO AGENTE // TESTAR CONVERSA AO VIVO</span>
               </CommandItem>
               <CommandItem
                 onSelect={() => runCommand(() => onNavigate('/tools'))}
                 className="cursor-pointer hover:bg-[#1A1A1A] hover:text-[#C6F432] p-2 transition-colors"
               >
                 <Wrench className="mr-2 h-3.5 w-3.5 text-[#818181]" />
-                <span>[04] TOOL MATRIX // REASONING CAPABILITIES</span>
+                <span>[04] FERRAMENTAS // HABILIDADES E CONEXÕES DO ROBÔ</span>
               </CommandItem>
             </CommandGroup>
           </CommandList>
@@ -102,9 +102,9 @@ export function CommandPalette({ onNavigate }: CommandPaletteProps) {
         <div className="flex items-center justify-between border-t border-[#2B2B2B] bg-[#000000] px-4 py-2 font-mono text-[10px] text-[#818181]">
           <div className="flex items-center gap-1.5">
             <CommandIcon className="h-3 w-3" />
-            <span>PRESS [ESC] TO CLOSE</span>
+            <span>PRESSIONE [ESC] PARA FECHAR</span>
           </div>
-          <span>AGNT-247 TERMINAL PALETTE</span>
+          <span>ATALHO RÁPIDO DO AGENTE 24/7</span>
         </div>
       </div>
     </div>

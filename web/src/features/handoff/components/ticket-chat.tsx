@@ -23,7 +23,7 @@ export function TicketChat({ ticket }: TicketChatProps) {
         <div>
           <div className="flex items-center gap-3">
             <span className="font-mono text-xs uppercase font-bold text-[#C6F432] border border-[#2B2B2B] px-1.5 py-0.5">
-              {ticket.channel}
+              CANAL: {ticket.channel}
             </span>
             <h2 className="font-syne text-lg font-bold uppercase text-[#EDEDED]">
               Ticket #{ticket.id}
@@ -38,26 +38,26 @@ export function TicketChat({ ticket }: TicketChatProps) {
                     : 'border-[#595959] text-[#818181]'
               )}
             >
-              [{ticket.status}]
+              [{ticket.status === 'open' ? 'ABERTO' : ticket.status === 'claimed' ? 'EM ATENDIMENTO' : 'FINALIZADO'}]
             </span>
           </div>
           <p className="font-mono text-[11px] text-[#818181] mt-1">
-            SESSION REF: {ticket.session_id}
+            SESSÃO DO CLIENTE: {ticket.session_id}
           </p>
         </div>
 
         <div className="flex items-center gap-4 font-mono text-xs text-[#818181]">
           {ticket.reason && (
             <span className="border border-[#2B2B2B] px-2 py-0.5 text-[#EDEDED]">
-              REASON: {ticket.reason}
+              MOTIVO: {ticket.reason}
             </span>
           )}
           {ticket.assignee ? (
             <span className="text-[#C6F432]">
-              OPERATOR: {ticket.assignee}
+              ATENDENTE RESPONSÁVEL: {ticket.assignee}
             </span>
           ) : (
-            <span className="text-amber-400">[UNCLAIMED]</span>
+            <span className="text-amber-400 font-bold">[AGUARDANDO ATENDENTE ASSUMIR]</span>
           )}
         </div>
       </div>
@@ -66,7 +66,7 @@ export function TicketChat({ ticket }: TicketChatProps) {
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-6">
         {ticket.messages.length === 0 ? (
           <div className="text-center font-mono text-xs text-[#818181] py-12">
-            // NO MESSAGE TRANSCRIPT LOGGED FOR THIS TICKET
+            // NENHUMA MENSAGEM REGISTRADA NESTE CHAMADO
           </div>
         ) : (
           ticket.messages.map((msg, index) => {
@@ -86,10 +86,10 @@ export function TicketChat({ ticket }: TicketChatProps) {
                 <div className="flex items-center gap-2 font-mono text-[10px] text-[#818181] mb-1.5 uppercase">
                   <span>
                     {isUser
-                      ? '// CUSTOMER INPUT'
+                      ? '// MENSAGEM DO CLIENTE'
                       : isHuman
-                        ? `// OPERATOR OVERRIDE (${ticket.assignee || 'Human'})`
-                        : '// AGENT ATTEMPT'}
+                        ? `// RESPOSTA DO ATENDENTE (${ticket.assignee || 'Humano'})`
+                        : '// TENTATIVA PRÉVIA DO ROBÔ'}
                   </span>
                   {msg.created_at && (
                     <>

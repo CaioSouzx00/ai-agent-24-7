@@ -12,7 +12,6 @@ export function Preloader({ onComplete }: PreloaderProps) {
   const [isDone, setIsDone] = useState(false)
 
   useEffect(() => {
-    // Non-linear realistic kernel boot simulation
     let current = 0
     const steps = [
       { target: 18, delay: 120 },
@@ -40,7 +39,7 @@ export function Preloader({ onComplete }: PreloaderProps) {
           setTimeout(onComplete, 850)
         }, 150)
       }
-    }, 38)
+    } , 38)
 
     return () => clearInterval(interval)
   }, [onComplete])
@@ -60,13 +59,13 @@ export function Preloader({ onComplete }: PreloaderProps) {
           <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-4 font-mono text-xs tracking-widest text-[var(--text-muted)] uppercase">
             <div className="flex items-center gap-3">
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--accent)]" />
-              <span>SYS.BOOT // KERNEL 0.3.0</span>
+              <span>INICIALIZANDO // AGENTE IA 24/7</span>
             </div>
             <div className="hidden md:block">
-              <span>LAT 37.7749° N — LON 122.4194° W</span>
+              <span>SERVIÇO AUTÔNOMO CONTÍNUO</span>
             </div>
             <div>
-              <span>INITIALIZING SHARDS</span>
+              <span>CARREGANDO FERRAMENTAS</span>
             </div>
           </div>
 
@@ -74,10 +73,10 @@ export function Preloader({ onComplete }: PreloaderProps) {
           <div className="my-auto grid grid-cols-1 md:grid-cols-12 gap-8 items-end">
             <div className="md:col-span-8">
               <span className="block font-mono text-xs uppercase tracking-widest text-[var(--accent)] mb-2">
-                [00 // SYSTEM INITIALIZATION RUNTIME]
+                [00 // CARREGANDO O SISTEMA]
               </span>
               <h2 className="font-syne text-3xl md:text-5xl font-extrabold uppercase tracking-tight text-[var(--text-primary)]">
-                Autonomous Cognitive Engine
+                Agente Autônomo 24/7
               </h2>
             </div>
             <div className="md:col-span-4 text-left md:text-right">
@@ -90,9 +89,9 @@ export function Preloader({ onComplete }: PreloaderProps) {
           {/* Bottom Diagnostics & Hairline Progress */}
           <div className="space-y-4">
             <div className="flex items-center justify-between font-mono text-[10px] tracking-widest text-[var(--text-muted)] uppercase">
-              <span>LANGGRAPH DETERMINISTIC DECISION GRAPH</span>
+              <span>CONECTANDO MODELO DE INTELIGÊNCIA ARTIFICIAL</span>
               <span className="text-[var(--accent)]">
-                {progress < 100 ? 'CONNECTING NVIDIA NIM...' : 'SYSTEM ARMED & SECURE'}
+                {progress < 100 ? 'CONECTANDO AOS SERVIÇOS...' : 'SISTEMA PRONTO PARA OPERAR'}
               </span>
             </div>
             {/* Hairline Progress Bar */}
