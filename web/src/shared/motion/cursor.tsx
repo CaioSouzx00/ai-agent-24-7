@@ -99,7 +99,7 @@ export function CustomCursor() {
           height: isCustom ? 84 : isInteractive ? 52 : 32,
           borderColor: isCustom || isInteractive ? 'var(--accent)' : 'var(--border-strong)',
           backgroundColor: isCustom
-            ? 'rgba(198, 244, 50, 0.12)'
+            ? 'rgba(212, 255, 0, 0.16)'
             : isInteractive
             ? 'rgba(255, 255, 255, 0.05)'
             : 'rgba(0, 0, 0, 0)',

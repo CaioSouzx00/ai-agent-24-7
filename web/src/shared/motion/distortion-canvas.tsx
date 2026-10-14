@@ -7,7 +7,7 @@ interface DistortionCanvasProps {
 
 export function DistortionCanvas({
   className = '',
-  accentColor = '#C6F432',
+  accentColor = '#D4FF00',
 }: DistortionCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const isHoveredRef = useRef(false)
@@ -40,7 +40,7 @@ export function DistortionCanvas({
       m.x += (m.targetX - m.x) * 0.08
       m.y += (m.targetY - m.y) * 0.08
 
-      ctx.fillStyle = '#080808'
+      ctx.fillStyle = '#050507'
       ctx.fillRect(0, 0, width, height)
 
       // Draw mathematical topographical grid waves
@@ -50,7 +50,7 @@ export function DistortionCanvas({
       const rowStep = height / (rows - 1)
 
       ctx.lineWidth = 1
-      ctx.strokeStyle = '#222222'
+      ctx.strokeStyle = '#1C1C24'
 
       for (let r = 0; r < rows; r++) {
         ctx.beginPath()

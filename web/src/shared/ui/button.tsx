@@ -8,13 +8,13 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: 'bg-[var(--accent)] text-black font-bold hover:bg-[#d6ff47] shadow-none',
+        default: 'bg-[var(--accent)] text-black font-bold hover:bg-[var(--accent-hover)] hover:shadow-[0_0_20px_var(--accent-glow)] shadow-none',
         destructive: 'border border-red-900 bg-red-950/40 text-red-300 hover:bg-red-900/40',
         outline: 'border border-[var(--border-subtle)] bg-[var(--surface-1)] text-[var(--text-primary)] hover:border-[var(--border-strong)] hover:bg-[var(--surface-2)]',
         secondary: 'border border-[var(--border-subtle)] bg-[var(--surface-2)] text-[var(--text-primary)] hover:bg-[var(--surface-3)]',
         ghost: 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-2)]',
         link: 'text-[var(--accent)] underline-offset-4 hover:underline p-0 h-auto',
-        glow: 'border border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)] hover:bg-[var(--accent)] hover:text-black font-bold',
+        glow: 'border border-[var(--accent)] bg-[var(--accent-subtle)] text-[var(--accent)] hover:bg-[var(--accent)] hover:text-black font-bold hover:shadow-[0_0_20px_var(--accent-glow)]',
       },
       size: {
         default: 'h-9 px-4 py-2',
