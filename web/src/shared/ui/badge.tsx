@@ -3,18 +3,18 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '../lib/utils'
 
 const badgeVariants = cva(
-  'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
+  'inline-flex items-center gap-1 rounded-none border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider transition-colors focus:outline-none',
   {
     variants: {
       variant: {
-        default: 'border-transparent bg-primary text-primary-foreground shadow',
-        secondary: 'border-transparent bg-secondary text-secondary-foreground',
-        destructive: 'border-transparent bg-destructive text-destructive-foreground shadow',
-        outline: 'text-foreground',
-        success: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400',
-        warning: 'border-amber-500/30 bg-amber-500/10 text-amber-400',
-        info: 'border-cyan-500/30 bg-cyan-500/10 text-cyan-400',
-        purple: 'border-indigo-500/30 bg-indigo-500/10 text-indigo-400',
+        default: 'border-[var(--border-strong)] bg-[var(--surface-2)] text-[var(--text-primary)]',
+        secondary: 'border-[var(--border-subtle)] bg-[var(--surface-1)] text-[var(--text-secondary)]',
+        destructive: 'border-red-900 bg-red-950/40 text-red-400',
+        outline: 'border-[var(--border-subtle)] text-[var(--text-secondary)] bg-transparent',
+        success: 'border-[var(--accent)]/50 bg-[var(--accent)]/10 text-[var(--accent)]',
+        warning: 'border-amber-700/50 bg-amber-950/30 text-amber-400',
+        info: 'border-[var(--border-strong)] bg-[var(--surface-2)] text-[var(--text-primary)]',
+        purple: 'border-[var(--border-strong)] bg-[var(--surface-3)] text-[var(--text-primary)]',
       },
     },
     defaultVariants: {

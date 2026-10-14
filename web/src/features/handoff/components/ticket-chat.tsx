@@ -1,7 +1,4 @@
 import { useEffect, useRef } from 'react'
-import { Bot, User, UserCheck } from 'lucide-react'
-import { Badge } from '@/shared/ui'
-import { CHANNEL_BADGES, TICKET_STATUS_COLORS } from '@/shared/config/constants'
 import { formatRelativeTime } from '@/shared/lib/formatters'
 import { cn } from '@/shared/lib/utils'
 import type { Ticket } from '../schemas/handoff-schemas'
@@ -19,51 +16,58 @@ export function TicketChat({ ticket }: TicketChatProps) {
     }
   }, [ticket.messages])
 
-  const statusConfig = TICKET_STATUS_COLORS[ticket.status]
-  const channelBadge = CHANNEL_BADGES[ticket.channel as keyof typeof CHANNEL_BADGES] || 'bg-slate-500/10'
-
   return (
-    <div className="flex h-full flex-col">
-      {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/80 bg-background/60 p-4">
-        <div className="flex items-center gap-3">
-          <span className={cn('rounded px-2 py-0.5 text-xs font-bold uppercase tracking-wider', channelBadge)}>
-            {ticket.channel}
-          </span>
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="font-display text-base font-bold text-foreground">
-                Ticket #{ticket.id}
-              </h2>
-              <Badge variant="outline" className={cn('text-[11px] gap-1 px-2 py-0', statusConfig.bg)}>
-                <span className={cn('h-1.5 w-1.5 rounded-full', statusConfig.dot)} />
-                {statusConfig.label}
-              </Badge>
-            </div>
-            <p className="font-mono text-xs text-muted-foreground">Session: {ticket.session_id}</p>
+    <div className="flex h-full flex-col bg-[#000000]">
+      {/* Editorial Ticket Meta Header */}
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#2B2B2B] bg-[#0D0D0D] p-4 sm:px-6">
+        <div>
+          <div className="flex items-center gap-3">
+            <span className="font-mono text-xs uppercase font-bold text-[#C6F432] border border-[#2B2B2B] px-1.5 py-0.5">
+              {ticket.channel}
+            </span>
+            <h2 className="font-syne text-lg font-bold uppercase text-[#EDEDED]">
+              Ticket #{ticket.id}
+            </h2>
+            <span
+              className={cn(
+                'font-mono text-[10px] px-1.5 py-0.5 border uppercase',
+                ticket.status === 'open'
+                  ? 'border-amber-600/50 text-amber-400 bg-amber-950/20'
+                  : ticket.status === 'claimed'
+                    ? 'border-[#C6F432]/50 text-[#C6F432] bg-[#C6F432]/10'
+                    : 'border-[#595959] text-[#818181]'
+              )}
+            >
+              [{ticket.status}]
+            </span>
           </div>
+          <p className="font-mono text-[11px] text-[#818181] mt-1">
+            SESSION REF: {ticket.session_id}
+          </p>
         </div>
 
-        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+        <div className="flex items-center gap-4 font-mono text-xs text-[#818181]">
           {ticket.reason && (
-            <span className="rounded bg-muted/40 px-2.5 py-1 text-slate-300">
-              Reason: {ticket.reason}
+            <span className="border border-[#2B2B2B] px-2 py-0.5 text-[#EDEDED]">
+              REASON: {ticket.reason}
             </span>
           )}
           {ticket.assignee ? (
-            <span className="flex items-center gap-1 font-medium text-indigo-400">
-              <UserCheck className="h-3.5 w-3.5" /> Assigned to {ticket.assignee}
+            <span className="text-[#C6F432]">
+              OPERATOR: {ticket.assignee}
             </span>
           ) : (
-            <span className="text-amber-400">Unassigned</span>
+            <span className="text-amber-400">[UNCLAIMED]</span>
           )}
         </div>
       </div>
 
       {/* Messages Feed */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-4">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-6">
         {ticket.messages.length === 0 ? (
-          <p className="text-center text-sm text-muted-foreground">No messages in this ticket.</p>
+          <div className="text-center font-mono text-xs text-[#818181] py-12">
+            // NO MESSAGE TRANSCRIPT LOGGED FOR THIS TICKET
+          </div>
         ) : (
           ticket.messages.map((msg, index) => {
             const isUser = msg.role === 'user'
@@ -73,45 +77,40 @@ export function TicketChat({ ticket }: TicketChatProps) {
             return (
               <div
                 key={index}
-                className={cn('flex gap-3 max-w-[80%]', isUser ? 'mr-auto' : 'ml-auto flex-row-reverse')}
+                className={cn(
+                  'flex flex-col max-w-2xl',
+                  isUser ? 'mr-auto items-start' : 'ml-auto items-end'
+                )}
               >
-                <div
-                  className={cn(
-                    'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold',
-                    isUser
-                      ? 'bg-muted text-muted-foreground'
+                {/* Speaker Label */}
+                <div className="flex items-center gap-2 font-mono text-[10px] text-[#818181] mb-1.5 uppercase">
+                  <span>
+                    {isUser
+                      ? '// CUSTOMER INPUT'
                       : isHuman
-                        ? 'bg-indigo-600 text-white'
-                        : 'bg-cyan-600 text-white'
+                        ? `// OPERATOR OVERRIDE (${ticket.assignee || 'Human'})`
+                        : '// AGENT ATTEMPT'}
+                  </span>
+                  {msg.created_at && (
+                    <>
+                      <span>•</span>
+                      <span>{formatRelativeTime(msg.created_at)}</span>
+                    </>
                   )}
-                >
-                  {isUser ? <User className="h-4 w-4" /> : isHuman ? <UserCheck className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
                 </div>
 
+                {/* Message Body */}
                 <div
                   className={cn(
-                    'rounded-2xl px-4 py-2.5 text-sm shadow-sm leading-relaxed',
+                    'border p-4 text-sm leading-relaxed',
                     isUser
-                      ? 'bg-muted/80 text-foreground rounded-tl-sm'
+                      ? 'border-[#2B2B2B] bg-[#0D0D0D] text-[#EDEDED]'
                       : isHuman
-                        ? 'bg-indigo-600 text-white rounded-tr-sm'
-                        : 'bg-card border border-border/80 text-foreground rounded-tr-sm'
+                        ? 'border-[#C6F432]/60 bg-[#1A1A1A] text-[#EDEDED]'
+                        : 'border-[#3F3F3F] bg-[#000000] text-[#A0A0A0]'
                   )}
                 >
-                  <div
-                    className={cn(
-                      'mb-1 text-[10px] font-semibold uppercase tracking-wider',
-                      isUser ? 'text-muted-foreground' : isHuman ? 'text-indigo-200' : 'text-cyan-400'
-                    )}
-                  >
-                    {isUser ? 'Customer' : isHuman ? `Operator (${ticket.assignee || 'Human'})` : 'AI Agent'}
-                  </div>
-                  <div className="whitespace-pre-wrap word-break">{msg.content}</div>
-                  {msg.created_at && (
-                    <div className="mt-1 text-right text-[10px] opacity-70">
-                      {formatRelativeTime(msg.created_at)}
-                    </div>
-                  )}
+                  <div className="whitespace-pre-wrap">{msg.content}</div>
                 </div>
               </div>
             )

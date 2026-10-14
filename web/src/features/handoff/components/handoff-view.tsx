@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { EmptyState, ErrorState, Skeleton } from '@/shared/ui'
+import { Skeleton } from '@/shared/ui'
 import { useTickets, useTicketDetail } from '../api/use-tickets'
 import { useTicketMutations } from '../api/use-ticket-mutations'
 import type { TicketStatusFilter } from '../schemas/handoff-schemas'
@@ -21,18 +21,17 @@ export function HandoffView() {
 
   if (isError) {
     return (
-      <div className="p-8">
-        <ErrorState
-          title="Failed to load handoff queue"
-          message={error instanceof Error ? error.message : 'Could not reach the /handoff/tickets endpoint.'}
-          onRetry={() => refetch()}
-        />
+      <div className="p-8 max-w-5xl mx-auto font-mono text-xs text-red-400">
+        // FAILED TO QUERY HANDOFF QUEUE: {error instanceof Error ? error.message : 'Queue unreachable'}
+        <button onClick={() => refetch()} className="mt-4 block border border-[#2B2B2B] px-3 py-1 text-[#EDEDED]">
+          RETRY QUERY
+        </button>
       </div>
     )
   }
 
   return (
-    <div className="grid h-[calc(100vh-64px)] grid-cols-1 md:grid-cols-[340px_1fr] lg:grid-cols-[380px_1fr] overflow-hidden">
+    <div className="grid h-[calc(100vh-56px)] grid-cols-1 md:grid-cols-[340px_1fr] lg:grid-cols-[380px_1fr] overflow-hidden bg-[#000000]">
       {/* Sidebar List */}
       <TicketList
         tickets={tickets}
@@ -46,13 +45,13 @@ export function HandoffView() {
       />
 
       {/* Main Conversation Pane */}
-      <div className="flex h-full flex-col bg-background">
+      <div className="flex h-full flex-col bg-[#000000] relative">
         {selectedTicketId ? (
           isLoadingDetail && !activeTicket ? (
-            <div className="p-6 space-y-4">
-              <Skeleton className="h-12 w-full rounded-lg" />
-              <Skeleton className="h-64 w-full rounded-lg" />
-              <Skeleton className="h-14 w-full rounded-lg" />
+            <div className="p-8 space-y-4">
+              <Skeleton className="h-12 w-full rounded-none bg-[#0D0D0D] border border-[#2B2B2B]" />
+              <Skeleton className="h-64 w-full rounded-none bg-[#0D0D0D] border border-[#2B2B2B]" />
+              <Skeleton className="h-14 w-full rounded-none bg-[#0D0D0D] border border-[#2B2B2B]" />
             </div>
           ) : activeTicket ? (
             <>
@@ -70,18 +69,19 @@ export function HandoffView() {
               />
             </>
           ) : (
-            <EmptyState
-              title="Ticket not found"
-              description="The selected ticket could not be loaded."
-              className="m-auto"
-            />
+            <div className="m-auto text-center font-mono text-xs text-[#818181] p-8">
+              // TICKET DATA UNRESOLVED
+            </div>
           )
         ) : (
-          <EmptyState
-            title="Select a conversation"
-            description="Choose a ticket from the left panel to review messages and take over the interaction."
-            className="m-auto max-w-md"
-          />
+          <div className="m-auto text-center font-mono text-xs text-[#818181] p-8 max-w-md">
+            <span className="block text-sm text-[#EDEDED] font-syne uppercase tracking-wider mb-2">
+              [NO CONVERSATION SELECTED]
+            </span>
+            <p className="leading-relaxed">
+              Select an escalated ticket from the triage queue on the left to inspect customer context and initiate human takeover.
+            </p>
+          </div>
         )}
       </div>
     </div>
