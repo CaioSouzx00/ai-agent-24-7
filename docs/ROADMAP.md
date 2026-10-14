@@ -33,7 +33,7 @@ Legenda de Status:
 | 2.1 Grafo de Decisão (LangGraph) | Grafo cíclico com nós para detecção de transbordo, execução do modelo, chamada de ferramentas e finalização | `[Concluido]` |
 | 2.2 Memória de Sessão de Curto Prazo | `SessionStore` baseado em Redis com fallback transparente para memória volátil em caso de indisponibilidade | `[Concluido]` |
 | 2.3 Memória Semântica de Longo Prazo | `LongTermMemory` estruturado em PostgreSQL com extensão `pgvector` para recuperação de contexto histórico | `[Concluido]` |
-| 2.4 Resiliência de Estado e Multi-Tenancy | Isolamento de histórico de conversação e contexto de memória particionado por `tenant_id` | `[Concluido]` |
+| 2.4 Resiliência de Sessão e Gestão de Contexto | Isolamento entre conversações simultâneas e corte configurável de histórico para controle de tokens | `[Concluido]` |
 
 ### Fase 3: Catálogo de Ferramentas e Integrações Externas
 | Módulo | Descrição | Status |
@@ -108,6 +108,7 @@ Legenda de Status:
 - `[Planejado]` Framework de avaliação automatizada de qualidade e alinhamento de respostas LLM (Ragas / DeepEval).
 
 ### Versão 0.4.0 (Foco: Orquestração em Escala, Otimização e Conformidade)
+- `[Planejado]` Multi-tenancy corporativo avançado com particionamento físico de dados (*schema-per-tenant* ou instâncias dedicadas de banco).
 - `[Planejado]` Helm Charts oficiais e Kubernetes Operator para provisionamento e auto-scaling horizontal em clusters K8s.
 - `[Planejado]` Cache semântico de inferência vetorial para redução de latência e consumo de tokens em perguntas frequentes.
 - `[Planejado]` Módulo de anonimização e expurgo programado de dados para conformidade estrita com LGPD e GDPR.

@@ -4,23 +4,23 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '../lib/utils'
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]',
+  'inline-flex items-center justify-center whitespace-nowrap text-xs font-mono uppercase tracking-wider transition-all duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent)] disabled:pointer-events-none disabled:opacity-40 rounded-none active:translate-y-[1px]',
   {
     variants: {
       variant: {
-        default: 'bg-primary text-primary-foreground shadow-lg shadow-indigo-500/20 hover:bg-primary/90 hover:shadow-indigo-500/35',
-        destructive: 'bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90',
-        outline: 'border border-input bg-background/50 hover:bg-accent/10 hover:text-accent-foreground backdrop-blur-sm',
-        secondary: 'bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80',
-        ghost: 'hover:bg-accent/10 hover:text-accent-foreground',
-        link: 'text-primary underline-offset-4 hover:underline',
-        glow: 'bg-gradient-to-r from-indigo-500 via-indigo-600 to-cyan-500 text-white shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:opacity-95',
+        default: 'bg-[var(--accent)] text-black font-bold hover:bg-[#d6ff47] shadow-none',
+        destructive: 'border border-red-900 bg-red-950/40 text-red-300 hover:bg-red-900/40',
+        outline: 'border border-[var(--border-subtle)] bg-[var(--surface-1)] text-[var(--text-primary)] hover:border-[var(--border-strong)] hover:bg-[var(--surface-2)]',
+        secondary: 'border border-[var(--border-subtle)] bg-[var(--surface-2)] text-[var(--text-primary)] hover:bg-[var(--surface-3)]',
+        ghost: 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-2)]',
+        link: 'text-[var(--accent)] underline-offset-4 hover:underline p-0 h-auto',
+        glow: 'border border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)] hover:bg-[var(--accent)] hover:text-black font-bold',
       },
       size: {
-        default: 'h-10 px-4 py-2',
-        sm: 'h-8 rounded-md px-3 text-xs',
-        lg: 'h-11 rounded-lg px-8 text-base',
-        icon: 'h-9 w-9',
+        default: 'h-9 px-4 py-2',
+        sm: 'h-7 px-3 text-[11px]',
+        lg: 'h-11 px-6 text-sm',
+        icon: 'h-8 w-8',
       },
     },
     defaultVariants: {

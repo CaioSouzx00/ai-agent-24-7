@@ -505,7 +505,27 @@ All application settings are managed through environment variables or `.env` fil
 
 The codebase enforces strict quality gates through automated tests and static analysis.
 
-### Running Automated Tests
+### Quality Checks (Local Pipeline)
+
+To validate deterministic styling, static linting, and all unit/integration tests locally without requiring cloud CI runners:
+
+```bash
+# Linux / macOS (Bash)
+bash scripts/check.sh
+
+# Windows (PowerShell)
+powershell -ExecutionPolicy Bypass -File .\scripts\check.ps1
+```
+
+The script executes 4 verification phases in sequence:
+1. **Ruff:** High-speed static analysis and linting (`ruff check .`).
+2. **Black:** Deterministic PEP 8 formatting check (`black --check .`).
+3. **isort:** Strict import order verification (`isort --check-only .`).
+4. **Pytest & Coverage:** Full automated test suite with coverage report (`pytest -v --cov=app --cov-report=term-missing`).
+
+---
+
+### Running Automated Tests Individually
 
 The backend test suite includes **137 passing automated tests** across unit, integration, and end-to-end flows:
 
@@ -617,6 +637,8 @@ ai-agent-24-7/
 │   └── prometheus/                      # Prometheus scraper configuration
 │
 ├── scripts/                             # Operational and demonstration utilities
+│   ├── check.sh                         # Unified local quality and test pipeline (Bash)
+│   ├── check.ps1                        # Unified local quality and test pipeline (PowerShell)
 │   ├── demo_chat.py                     # Interactive CLI chat utility
 │   ├── demo_handoff.py                  # End-to-end human handoff demonstration script
 │   ├── google_oauth_setup.py            # Assistant for generating Google OAuth tokens

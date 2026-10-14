@@ -35,31 +35,37 @@ export function TicketReplyBar({
   }
 
   return (
-    <div className="border-t border-border/80 bg-background/80 p-4 backdrop-blur-sm">
+    <div className="border-t border-[#2B2B2B] bg-[#0D0D0D] p-4">
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         <div className="flex gap-2">
           <Input
             placeholder={
-              isResolved ? 'This ticket is resolved. Reopen to reply.' : 'Type your reply to the customer (Enter to send)...'
+              isResolved
+                ? '// TICKET RESOLVED — REOPEN REQUIRED TO POST'
+                : 'Enter operator reply to customer (Press Enter to dispatch)...'
             }
             value={text}
             onChange={(e) => setText(e.target.value)}
             disabled={isResolved || isSending}
-            className="flex-1"
+            className="flex-1 bg-[#000000]"
           />
           <Button
             type="submit"
             disabled={isResolved || isSending || !text.trim()}
-            className="gap-2 shrink-0"
+            variant="default"
+            size="sm"
+            data-cursor
+            data-cursor-label="send"
+            className="gap-2 shrink-0 font-mono text-xs"
           >
-            <Send className="h-4 w-4" />
-            Send
+            <Send className="h-3.5 w-3.5" />
+            <span>DISPATCH</span>
           </Button>
         </div>
 
-        <div className="flex items-center justify-between pt-1">
-          <div className="text-xs text-muted-foreground">
-            Replying as: <span className="font-semibold text-foreground">{operatorName}</span>
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-1 font-mono text-xs">
+          <div className="text-[#818181] text-[11px]">
+            SIGNATURE: <span className="text-[#EDEDED] font-bold uppercase">{operatorName}</span>
           </div>
 
           <div className="flex items-center gap-2">
@@ -70,10 +76,12 @@ export function TicketReplyBar({
                 size="sm"
                 onClick={() => onClaim(operatorName)}
                 disabled={isClaiming}
-                className="gap-1.5 text-xs text-indigo-400 hover:text-indigo-300"
+                data-cursor
+                data-cursor-label="claim"
+                className="gap-1.5 text-xs text-[#C6F432] border-[#C6F432]/40 hover:bg-[#C6F432]/10"
               >
                 <UserCheck className="h-3.5 w-3.5" />
-                Claim Ticket
+                <span>CLAIM TICKET</span>
               </Button>
             )}
 
@@ -84,10 +92,12 @@ export function TicketReplyBar({
                 size="sm"
                 onClick={onResolve}
                 disabled={isResolving}
-                className="gap-1.5 text-xs text-emerald-400 hover:text-emerald-300"
+                data-cursor
+                data-cursor-label="resolve"
+                className="gap-1.5 text-xs text-emerald-400 border-emerald-800/40 hover:bg-emerald-950/20"
               >
                 <CheckCircle2 className="h-3.5 w-3.5" />
-                Resolve Ticket
+                <span>RESOLVE TICKET</span>
               </Button>
             )}
           </div>

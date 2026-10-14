@@ -4,20 +4,23 @@ import { DashboardView } from '@/features/dashboard'
 import { HandoffView } from '@/features/handoff'
 import { ChatView } from '@/features/chat'
 import { ToolsView } from '@/features/tools'
+import { EditorialView } from '@/features/editorial/editorial-view'
+import { Preloader } from '@/shared/motion/preloader'
+import { CustomCursor } from '@/shared/motion/cursor'
+import { SmoothScrollProvider } from '@/shared/motion/smooth-scroll'
 
 export function AppRouter() {
+  const [hasBooted, setHasBooted] = useState(false)
   const [currentPath, setCurrentPath] = useState(() => {
     if (typeof window !== 'undefined') {
-      const p = window.location.pathname
-      return p === '/' ? '/dashboard' : p
+      return window.location.pathname
     }
-    return '/dashboard'
+    return '/'
   })
 
   useEffect(() => {
     const onPopState = () => {
-      const p = window.location.pathname
-      setCurrentPath(p === '/' ? '/dashboard' : p)
+      setCurrentPath(window.location.pathname)
     }
     window.addEventListener('popstate', onPopState)
     return () => window.removeEventListener('popstate', onPopState)
@@ -27,6 +30,7 @@ export function AppRouter() {
     if (path !== currentPath) {
       window.history.pushState({}, '', path)
       setCurrentPath(path)
+      window.scrollTo({ top: 0, behavior: 'instant' })
     }
   }
 
@@ -34,21 +38,51 @@ export function AppRouter() {
     switch (currentPath) {
       case '/handoff':
       case '/handoff/ui':
-        return <HandoffView />
+        return (
+          <AppLayout currentPath={currentPath} onNavigate={navigate}>
+            <HandoffView />
+          </AppLayout>
+        )
       case '/chat':
-        return <ChatView />
+        return (
+          <AppLayout currentPath={currentPath} onNavigate={navigate}>
+            <ChatView />
+          </AppLayout>
+        )
       case '/tools':
-        return <ToolsView />
+        return (
+          <AppLayout currentPath={currentPath} onNavigate={navigate}>
+            <ToolsView />
+          </AppLayout>
+        )
       case '/dashboard':
+        return (
+          <AppLayout currentPath={currentPath} onNavigate={navigate}>
+            <DashboardView />
+          </AppLayout>
+        )
       case '/':
+      case '/editorial':
       default:
-        return <DashboardView />
+        return <EditorialView onNavigateToConsole={navigate} />
     }
   }
 
   return (
-    <AppLayout currentPath={currentPath} onNavigate={navigate}>
-      {renderContent()}
-    </AppLayout>
+    <SmoothScrollProvider>
+      {/* Subtle Noise / Film Grain Overlay */}
+      <div className="noise-overlay" />
+
+      {/* Editorial Custom Cursor with Context Labels */}
+      <CustomCursor />
+
+      {/* Kernel Preloader with Precision Counter */}
+      {!hasBooted && <Preloader onComplete={() => setHasBooted(true)} />}
+
+      {/* Main Routed Content */}
+      <main className="relative z-10 w-full min-h-screen">
+        {renderContent()}
+      </main>
+    </SmoothScrollProvider>
   )
 }

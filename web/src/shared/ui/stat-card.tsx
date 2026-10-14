@@ -18,29 +18,37 @@ export function StatCard({
   hint,
   icon,
   trend,
-  valueColor = 'text-foreground',
+  valueColor = 'text-[var(--text-primary)]',
   className,
 }: StatCardProps) {
   return (
     <motion.div
       whileHover={{ y: -2 }}
       transition={{ duration: 0.2 }}
+      data-cursor
+      data-cursor-label="inspect"
       className={cn(
-        'glass-panel relative overflow-hidden rounded-xl p-5 transition-shadow hover:shadow-xl hover:shadow-indigo-500/5 hover:border-indigo-500/30',
+        'relative bg-[var(--surface-1)] border border-[var(--border-subtle)] p-6 transition-colors hover:border-[var(--border-strong)] rounded-none group',
         className
       )}
     >
-      <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+      <div className="flex items-center justify-between font-mono text-[11px] uppercase tracking-wider text-[var(--text-muted)]">
         <span>{title}</span>
-        {icon && <div className="text-muted-foreground/80">{icon}</div>}
+        {icon && <div className="text-[var(--text-muted)] group-hover:text-[var(--text-primary)] transition-colors">{icon}</div>}
       </div>
 
-      <div className="mt-3 flex items-baseline gap-2">
-        <div className={cn('font-mono text-3xl font-bold tracking-tight', valueColor)}>{value}</div>
-        {trend && <span className="text-xs font-medium text-emerald-400">{trend}</span>}
+      <div className="mt-4 flex items-baseline gap-3">
+        <div className={cn('font-display text-4xl sm:text-5xl font-normal tracking-tight text-[var(--text-primary)]', valueColor)}>
+          {value}
+        </div>
+        {trend && <span className="font-mono text-[10px] text-[var(--accent)]">{trend}</span>}
       </div>
 
-      {hint && <p className="mt-1.5 text-xs text-muted-foreground">{hint}</p>}
+      {hint && <p className="mt-2 font-mono text-[11px] text-[var(--text-muted)] leading-relaxed">{hint}</p>}
+
+      {/* Technical corner ticks */}
+      <span className="absolute top-0 right-0 text-[10px] font-mono text-[var(--border-subtle)] leading-none p-1 pointer-events-none">+</span>
+      <span className="absolute bottom-0 left-0 text-[10px] font-mono text-[var(--border-subtle)] leading-none p-1 pointer-events-none">+</span>
     </motion.div>
   )
 }

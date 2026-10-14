@@ -3,13 +3,11 @@ import {
   Activity,
   Bot,
   Key,
-  Moon,
-  Sun,
   Users,
   Wrench,
   Command as CommandIcon,
-  Bot as RobotIcon,
   ShieldCheck,
+  Terminal,
 } from 'lucide-react'
 import { Button, Input, Toaster, Badge } from '@/shared/ui'
 import { useAuthStore } from '@/shared/lib/auth-store'
@@ -22,16 +20,17 @@ export interface LayoutProps {
 }
 
 export function AppLayout({ children, currentPath, onNavigate }: LayoutProps) {
-  const { apiKey, setApiKey, operatorName, setOperatorName, theme, setTheme } = useAuthStore()
+  const { apiKey, setApiKey, operatorName, setOperatorName } = useAuthStore()
   const [isKeyModalOpen, setIsKeyModalOpen] = useState(false)
   const [tempKey, setTempKey] = useState(apiKey)
   const [tempOp, setTempOp] = useState(operatorName)
 
   const navItems = [
-    { label: 'Dashboard', path: '/dashboard', icon: Activity },
-    { label: 'Handoff Queue', path: '/handoff', icon: Users },
-    { label: 'Playground', path: '/chat', icon: Bot },
-    { label: 'Tools', path: '/tools', icon: Wrench },
+    { num: '00', label: 'MANIFESTO', path: '/', icon: Terminal },
+    { num: '01', label: 'TELEMETRY', path: '/dashboard', icon: Activity },
+    { num: '02', label: 'HANDOFF', path: '/handoff', icon: Users },
+    { num: '03', label: 'CONSOLE', path: '/chat', icon: Bot },
+    { num: '04', label: 'TOOL MATRIX', path: '/tools', icon: Wrench },
   ]
 
   const handleSaveAuth = (e: React.FormEvent) => {
@@ -42,152 +41,161 @@ export function AppLayout({ children, currentPath, onNavigate }: LayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
-      {/* Top Navigation Bar */}
-      <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-border/80 bg-background/80 px-6 backdrop-blur-md">
-        {/* Brand */}
+    <div className="min-h-screen bg-[#000000] text-[#EDEDED] flex flex-col font-sans selection:bg-[#C6F432] selection:text-black">
+      {/* Top Hairline Telemetry Bar */}
+      <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-[#2B2B2B] bg-[#000000]/90 px-4 md:px-8 backdrop-blur-md">
+        {/* Brand & Kernel Status */}
         <div className="flex items-center gap-6">
           <div
-            onClick={() => onNavigate('/dashboard')}
-            className="flex items-center gap-2.5 cursor-pointer group"
+            onClick={() => onNavigate('/')}
+            data-cursor
+            data-cursor-label="home"
+            className="flex items-center gap-3 cursor-pointer group"
           >
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 to-cyan-500 text-white shadow-md shadow-indigo-500/20 group-hover:shadow-indigo-500/40 transition-all">
-              <RobotIcon className="h-5 w-5" />
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#C6F432] animate-pulse" />
+              <span className="font-mono text-xs uppercase tracking-widest text-[#EDEDED] font-bold group-hover:text-[#C6F432] transition-colors">
+                SYS // AGNT-247
+              </span>
             </div>
-            <div>
-              <div className="font-display text-base font-bold tracking-tight text-foreground flex items-center gap-1.5">
-                AI Agent 24/7
-                <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-indigo-500/30 text-indigo-400">
-                  v0.2.0
-                </Badge>
-              </div>
-            </div>
+            <span className="hidden sm:inline-block font-mono text-[10px] text-[#818181] border border-[#2B2B2B] px-1.5 py-0.2">
+              v0.2.0-STABLE
+            </span>
           </div>
 
           {/* Navigation Links */}
-          <nav className="hidden md:flex items-center gap-1">
+          <nav className="hidden lg:flex items-center gap-1 pl-4 border-l border-[#2B2B2B]">
             {navItems.map((item) => {
-              const Icon = item.icon
-              const isActive = currentPath === item.path || (currentPath === '/' && item.path === '/dashboard')
+              const isActive =
+                currentPath === item.path ||
+                (currentPath === '/' && item.path === '/') ||
+                (currentPath === '/dashboard' && item.path === '/dashboard')
               return (
                 <button
                   key={item.path}
                   onClick={() => onNavigate(item.path)}
-                  className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                  data-cursor
+                  data-cursor-label="navigate"
+                  className={`flex items-center gap-1.5 px-3 py-1 font-mono text-xs uppercase tracking-wider transition-colors ${
                     isActive
-                      ? 'bg-accent/15 text-accent-foreground font-bold border border-accent/20'
-                      : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground'
+                      ? 'text-[#C6F432] border-b border-[#C6F432]'
+                      : 'text-[#818181] hover:text-[#EDEDED]'
                   }`}
                 >
-                  <Icon className={`h-4 w-4 ${isActive ? 'text-accent' : ''}`} />
-                  {item.label}
+                  <span className="text-[10px] opacity-60">[{item.num}]</span>
+                  <span>{item.label}</span>
                 </button>
               )
             })}
           </nav>
         </div>
 
-        {/* Right Actions */}
-        <div className="flex items-center gap-2.5">
+        {/* Right Actions & Telemetry State */}
+        <div className="flex items-center gap-3">
           {/* Quick Search Shortcut */}
           <button
             onClick={() => {
               const event = new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true })
               document.dispatchEvent(event)
             }}
-            className="hidden sm:flex items-center gap-2 rounded-lg border border-border/80 bg-muted/20 px-2.5 py-1 text-xs text-muted-foreground hover:border-border hover:text-foreground transition-all"
+            data-cursor
+            data-cursor-label="search"
+            className="hidden sm:flex items-center gap-2 border border-[#2B2B2B] bg-[#0D0D0D] px-2.5 py-1 font-mono text-xs text-[#818181] hover:border-[#595959] hover:text-[#EDEDED] transition-colors"
           >
             <CommandIcon className="h-3 w-3" />
-            <span>Search</span>
-            <kbd className="rounded bg-muted/60 px-1 font-mono text-[10px]">Ctrl+K</kbd>
+            <span className="text-[11px]">COMMAND</span>
+            <kbd className="border border-[#2B2B2B] bg-[#1A1A1A] px-1 text-[9px] text-[#EDEDED]">CTRL+K</kbd>
           </button>
 
           {/* Operator Badge & API Key Trigger */}
-          <Button
-            variant="outline"
-            size="sm"
+          <button
             onClick={() => {
               setTempKey(apiKey)
               setTempOp(operatorName)
               setIsKeyModalOpen(true)
             }}
-            className="h-8 gap-1.5 text-xs font-mono border-border/80"
+            data-cursor
+            data-cursor-label="auth"
+            className="flex items-center gap-1.5 border border-[#2B2B2B] bg-[#0D0D0D] px-2.5 py-1 font-mono text-xs text-[#EDEDED] hover:border-[#595959] transition-colors"
           >
-            <Key className="h-3.5 w-3.5 text-indigo-400" />
-            <span className="hidden sm:inline">{operatorName}</span>
+            <Key className="h-3 w-3 text-[#C6F432]" />
+            <span className="hidden sm:inline uppercase text-[11px]">{operatorName}</span>
             {apiKey ? (
-              <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
+              <span className="text-[9px] font-mono text-[#C6F432]">[AUTHED]</span>
             ) : (
-              <span className="text-[10px] text-amber-400">(no key)</span>
+              <span className="text-[9px] font-mono text-amber-400">[NO-KEY]</span>
             )}
-          </Button>
-
-          {/* Theme Toggle */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="h-8 w-8 p-0"
-            title="Toggle color theme"
-          >
-            {theme === 'dark' ? (
-              <Sun className="h-4 w-4 text-amber-400" />
-            ) : (
-              <Moon className="h-4 w-4 text-indigo-400" />
-            )}
-          </Button>
+          </button>
         </div>
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 overflow-x-hidden">{children}</main>
+      <main className="flex-1 overflow-x-hidden bg-[#000000]">{children}</main>
 
       {/* Command Palette */}
       <CommandPalette onNavigate={onNavigate} />
 
       {/* API Key & Operator Configuration Modal */}
       {isKeyModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-in fade-in-50">
-          <div className="glass-panel w-full max-w-md rounded-xl p-6 shadow-2xl border border-border/80">
-            <h3 className="font-display text-lg font-bold text-foreground">API Key & Operator Profile</h3>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Configure credentials for authenticated endpoints (`/chat`, `/handoff`, `/tools/dynamic`).
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+          <div className="relative w-full max-w-md border border-[#595959] bg-[#0D0D0D] p-6 text-[#EDEDED] shadow-2xl">
+            <span className="absolute top-0 right-0 text-[10px] font-mono text-[#595959] p-2 leading-none">+</span>
+            <span className="absolute bottom-0 left-0 text-[10px] font-mono text-[#595959] p-2 leading-none">+</span>
+
+            <div className="border-b border-[#2B2B2B] pb-3 mb-4">
+              <span className="font-mono text-[10px] uppercase text-[#818181] tracking-widest">[SECURITY PROTOCOL]</span>
+              <h3 className="font-syne text-lg font-bold uppercase tracking-tight text-[#EDEDED]">
+                Operator Credentials
+              </h3>
+            </div>
+
+            <p className="font-mono text-xs text-[#818181] leading-relaxed mb-4">
+              Configure credentials for authenticated endpoints (/chat, /handoff, /tools/dynamic).
             </p>
 
-            <form onSubmit={handleSaveAuth} className="mt-4 space-y-4">
+            <form onSubmit={handleSaveAuth} className="space-y-4">
               <div>
-                <label className="text-xs font-semibold text-foreground">API Key or Bearer Token</label>
+                <label className="font-mono text-xs text-[#818181] uppercase block mb-1">
+                  API Key or Bearer Token
+                </label>
                 <Input
                   type="password"
-                  placeholder="e.g. dev-secret-key or custom API key"
+                  placeholder="e.g. dev-secret-key"
                   value={tempKey}
                   onChange={(e) => setTempKey(e.target.value)}
-                  className="mt-1 font-mono text-xs"
+                  className="w-full"
                 />
-                <p className="mt-1 text-[11px] text-muted-foreground">
-                  Leave empty if running locally without authentication.
+                <p className="mt-1 font-mono text-[10px] text-[#818181]">
+                  Leave empty if running locally without bearer authentication.
                 </p>
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-foreground">Operator Name</label>
+                <label className="font-mono text-xs text-[#818181] uppercase block mb-1">
+                  Operator Signature ID
+                </label>
                 <Input
-                  placeholder="e.g. Caio, Alice, operator-1"
+                  placeholder="e.g. Caio, operator-01"
                   value={tempOp}
                   onChange={(e) => setTempOp(e.target.value)}
-                  className="mt-1 text-xs"
+                  className="w-full"
                 />
-                <p className="mt-1 text-[11px] text-muted-foreground">
-                  Identifies you when claiming and replying to human handoff tickets.
+                <p className="mt-1 font-mono text-[10px] text-[#818181]">
+                  Tag affixed to human handoff claims and overrides.
                 </p>
               </div>
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-border/80">
-                <Button type="button" variant="outline" size="sm" onClick={() => setIsKeyModalOpen(false)}>
+              <div className="flex justify-end gap-2 pt-4 border-t border-[#2B2B2B]">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsKeyModalOpen(false)}
+                >
                   Cancel
                 </Button>
-                <Button type="submit" size="sm">
-                  Save Settings
+                <Button type="submit" size="sm" variant="default">
+                  Save Credentials
                 </Button>
               </div>
             </form>
