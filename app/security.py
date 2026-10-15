@@ -119,7 +119,7 @@ async def require_auth(request: Request) -> dict[str, Any]:
     # 1. Dev mode with no credentials configured -> open access
     has_jwt_config = bool(settings.jwt_secret or settings.jwt_jwks_url)
     has_key_config = bool([k.strip() for k in settings.api_keys.split(",") if k.strip()])
-    if not has_jwt_config and not has_key_config and settings.app_env == "dev":
+    if not has_jwt_config and not has_key_config and settings.app_env in ("dev", "test"):
         user = {"sub": "dev_user", "role": "dev"}
         request.state.user = user
         return user
@@ -137,7 +137,7 @@ async def require_auth(request: Request) -> dict[str, Any]:
             raise HTTPException(401, "JWT token has expired") from None
         except jwt.PyJWTError as exc:
             log.warning("JWT validation failed: %s", exc)
-            raise HTTPException(401, f"invalid JWT token: {exc}") from exc
+            raise HTTPException(401, "invalid JWT token") from exc
 
     # 3. Fallback to API Key
     if api_key_allowed(settings, token):

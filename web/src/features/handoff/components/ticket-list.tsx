@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Search, UserCheck } from 'lucide-react'
 import { Input, Skeleton } from '@/shared/ui'
 import { formatRelativeTime, truncate } from '@/shared/lib/formatters'
@@ -25,6 +26,8 @@ export function TicketList({
   onSearchChange,
   isLoading,
 }: TicketListProps) {
+  const [pageSize, setPageSize] = useState(20)
+
   const filtered = tickets.filter((t) => {
     if (!searchQuery) return true
     const q = searchQuery.toLowerCase()
@@ -35,6 +38,8 @@ export function TicketList({
       (t.messages.at(-1)?.content || '').toLowerCase().includes(q)
     )
   })
+
+  const visibleTickets = filtered.slice(0, pageSize)
 
   const filterLabels: Record<string, string> = {
     '': 'TODOS',
@@ -57,6 +62,7 @@ export function TicketList({
           <Input
             placeholder="Buscar por cliente, id, mensagem..."
             value={searchQuery}
+            maxLength={100}
             onChange={(e) => onSearchChange(e.target.value)}
             className="pl-8 h-8 text-xs bg-[#0D0D0D]"
           />
@@ -67,7 +73,10 @@ export function TicketList({
           {(['', 'open', 'claimed', 'resolved'] as const).map((s) => (
             <button
               key={s}
-              onClick={() => onFilterChange(s)}
+              onClick={() => {
+                onFilterChange(s)
+                setPageSize(20)
+              }}
               data-cursor
               data-cursor-label="filtro"
               className={cn(
@@ -96,67 +105,83 @@ export function TicketList({
             // NENHUM CHAMADO ENCONTRADO NESTE FILTRO
           </div>
         ) : (
-          filtered.map((ticket) => {
-            const isSelected = selectedTicketId === ticket.id
-            const lastMsg = ticket.messages.at(-1)
+          <>
+            {visibleTickets.map((ticket) => {
+              const isSelected = selectedTicketId === ticket.id
+              const lastMsg = ticket.messages.at(-1)
 
-            return (
-              <div
-                key={ticket.id}
-                onClick={() => onSelectTicket(ticket.id)}
-                data-cursor
-                data-cursor-label="atender"
-                className={cn(
-                  'cursor-pointer p-4 transition-colors',
-                  isSelected
-                    ? 'bg-[#1A1A1A] border-l-2 border-[#C6F432]'
-                    : 'bg-[#000000] hover:bg-[#0D0D0D]'
-                )}
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-[10px] uppercase font-bold text-[#C6F432] border border-[#2B2B2B] px-1">
-                      {ticket.channel}
-                    </span>
-                    <span className="font-mono text-xs text-[#EDEDED] font-bold">
-                      #{ticket.id}
+              return (
+                <div
+                  key={ticket.id}
+                  onClick={() => onSelectTicket(ticket.id)}
+                  data-cursor
+                  data-cursor-label="atender"
+                  className={cn(
+                    'cursor-pointer p-4 transition-colors',
+                    isSelected
+                      ? 'bg-[#1A1A1A] border-l-2 border-[#C6F432]'
+                      : 'bg-[#000000] hover:bg-[#0D0D0D]'
+                  )}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-[10px] uppercase font-bold text-[#C6F432] border border-[#2B2B2B] px-1">
+                        {ticket.channel}
+                      </span>
+                      <span className="font-mono text-xs text-[#EDEDED] font-bold">
+                        #{ticket.id}
+                      </span>
+                    </div>
+                    <span className="font-mono text-[10px] text-[#818181]">
+                      {formatRelativeTime(ticket.created_at)}
                     </span>
                   </div>
-                  <span className="font-mono text-[10px] text-[#818181]">
-                    {formatRelativeTime(ticket.created_at)}
-                  </span>
-                </div>
 
-                <p className="mt-2 font-sans text-xs text-[#A0A0A0] line-clamp-2 leading-relaxed">
-                  {lastMsg ? truncate(lastMsg.content, 90) : 'Sem mensagens registradas'}
-                </p>
+                  <p className="mt-2 font-sans text-xs text-[#A0A0A0] line-clamp-2 leading-relaxed">
+                    {lastMsg ? truncate(lastMsg.content, 90) : 'Sem mensagens registradas'}
+                  </p>
 
-                <div className="mt-3 flex items-center justify-between font-mono text-[10px]">
-                  <span
-                    className={cn(
-                      'px-1.5 py-0.5 border uppercase font-mono text-[10px]',
-                      ticket.status === 'open'
-                        ? 'border-amber-600/50 text-amber-400 bg-amber-950/20'
-                        : ticket.status === 'claimed'
-                          ? 'border-[#C6F432]/50 text-[#C6F432] bg-[#C6F432]/10'
-                          : 'border-[#595959] text-[#818181]'
-                    )}
-                  >
-                    {ticket.status === 'open' ? 'Open' : ticket.status === 'claimed' ? 'Claimed' : 'Resolved'}
-                  </span>
-
-                  {ticket.assignee ? (
-                    <span className="flex items-center gap-1 text-[#C6F432]">
-                      <UserCheck className="h-3 w-3" />
-                      {ticket.assignee}
+                  <div className="mt-3 flex items-center justify-between font-mono text-[10px]">
+                    <span
+                      className={cn(
+                        'px-1.5 py-0.5 border uppercase font-mono text-[10px]',
+                        ticket.status === 'open'
+                          ? 'border-amber-600/50 text-amber-400 bg-amber-950/20'
+                          : ticket.status === 'claimed'
+                            ? 'border-[#C6F432]/50 text-[#C6F432] bg-[#C6F432]/10'
+                            : 'border-[#595959] text-[#818181]'
+                      )}
+                    >
+                      {ticket.status === 'open' ? 'Open' : ticket.status === 'claimed' ? 'Claimed' : 'Resolved'}
                     </span>
-                  ) : (
-                    <span className="text-amber-400 font-mono text-[10px]">[AGUARDANDO ATENDENTE]</span>
-                  )}
+
+                    {ticket.assignee ? (
+                      <span className="flex items-center gap-1 text-[#C6F432]">
+                        <UserCheck className="h-3 w-3" />
+                        {ticket.assignee}
+                      </span>
+                    ) : (
+                      <span className="text-amber-400 font-mono text-[10px]">[AGUARDANDO ATENDENTE]</span>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+
+            {filtered.length > pageSize && (
+              <div className="p-4 text-center bg-[#0D0D0D] border-t border-[#2B2B2B]">
+                <button
+                  onClick={() => setPageSize((prev) => prev + 20)}
+                  className="font-mono text-xs text-[#C6F432] border border-[#C6F432]/40 px-3 py-1.5 hover:bg-[#C6F432]/10 transition-colors uppercase"
+                >
+                  [CARREGAR MAIS (+20 CHAMADOS)]
+                </button>
+                <div className="mt-2 font-mono text-[10px] text-[#818181]">
+                  Exibindo {visibleTickets.length} de {filtered.length} chamados
                 </div>
               </div>
-            )
-          })
+            )}
+          </>
         )}
       </div>
     </div>

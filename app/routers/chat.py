@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Request, WebSocket, WebSocketDisconnect
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.config import get_settings
 from app.ratelimit import check_rate_limit, limiter
@@ -26,11 +26,28 @@ class ChatIn(BaseModel):
         }
     )
 
-    session_id: str = Field(..., description="Unique session or conversation identifier")
-    message: str = Field(..., description="User message text content")
-    tenant_id: str = Field(
-        default="default", description="Tenant identifier for multi-tenant memory and isolation"
+    session_id: str = Field(
+        ...,
+        min_length=1,
+        max_length=128,
+        description="Unique session or conversation identifier",
     )
+    message: str = Field(
+        ...,
+        min_length=1,
+        max_length=4000,
+        description="User message text content",
+    )
+    tenant_id: str = Field(
+        default="default",
+        max_length=64,
+        description="Tenant identifier for multi-tenant memory and isolation",
+    )
+
+    @field_validator("session_id", "message", "tenant_id", mode="before")
+    @classmethod
+    def _strip_strings(cls, v: str) -> str:
+        return v.strip() if isinstance(v, str) else v
 
 
 @router.post("/chat", dependencies=[Depends(require_api_key), Depends(check_rate_limit)])

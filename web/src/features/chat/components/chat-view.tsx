@@ -277,6 +277,7 @@ export function ChatView() {
           <Input
             placeholder="Digite uma mensagem para o robô (ex: 'Quero tirar uma dúvida sobre o plano', 'Quero cancelar')..."
             value={inputMessage}
+            maxLength={4000}
             onChange={(e) => setInputMessage(e.target.value)}
             disabled={isLoading}
             className="flex-1 bg-transparent border-none text-[#EDEDED] font-mono text-xs focus-visible:border-none focus-visible:ring-0 p-0 h-auto"

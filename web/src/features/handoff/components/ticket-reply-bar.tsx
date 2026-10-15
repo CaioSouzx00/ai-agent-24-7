@@ -24,6 +24,7 @@ export function TicketReplyBar({
   isResolving,
 }: TicketReplyBarProps) {
   const [text, setText] = useState('')
+  const [isConfirmingResolve, setIsConfirmingResolve] = useState(false)
   const operatorName = useAuthStore((s) => s.operatorName)
   const isResolved = ticket.status === 'resolved'
 
@@ -45,6 +46,7 @@ export function TicketReplyBar({
                 : 'Digite sua resposta para enviar diretamente ao cliente (Pressione Enter para enviar)...'
             }
             value={text}
+            maxLength={4000}
             onChange={(e) => setText(e.target.value)}
             disabled={isResolved || isSending}
             className="flex-1 bg-[#000000]"
@@ -90,7 +92,7 @@ export function TicketReplyBar({
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={onResolve}
+                onClick={() => setIsConfirmingResolve(true)}
                 disabled={isResolving}
                 data-cursor
                 data-cursor-label="finalizar"
@@ -103,6 +105,42 @@ export function TicketReplyBar({
           </div>
         </div>
       </form>
+
+      {/* Confirmation Modal for Destructive Resolution */}
+      {isConfirmingResolve && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+          <div className="relative w-full max-w-md border border-emerald-800/60 bg-[#0D0D0D] p-6 text-[#EDEDED] shadow-2xl">
+            <h3 className="font-syne text-lg font-bold uppercase text-emerald-400 mb-2">
+              Finalizar Atendimento Humano
+            </h3>
+            <p className="font-sans text-xs text-[#A0A0A0] leading-relaxed mb-6">
+              Tem certeza de que deseja encerrar o chamado <strong className="text-[#EDEDED] font-mono">#{ticket.id}</strong>? O robô retomará as respostas automáticas para novas mensagens deste cliente.
+            </p>
+            <div className="flex justify-end gap-2 pt-4 border-t border-[#2B2B2B]">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setIsConfirmingResolve(false)}
+              >
+                Voltar
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                disabled={isResolving}
+                onClick={() => {
+                  setIsConfirmingResolve(false)
+                  onResolve()
+                }}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-mono text-xs"
+              >
+                {isResolving ? 'FINALIZANDO...' : 'SIM, FINALIZAR ATENDIMENTO'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

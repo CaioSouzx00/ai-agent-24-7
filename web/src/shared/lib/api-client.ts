@@ -1,3 +1,4 @@
+import { toast } from 'sonner'
 import { useAuthStore } from './auth-store'
 
 export class ApiError extends Error {
@@ -84,6 +85,18 @@ class ApiClient {
             // fallback to statusText
           }
         }
+
+        // Automatic 401/403 session expiration handler
+        if (response.status === 401 || response.status === 403) {
+          const auth = useAuthStore.getState()
+          if (auth.apiKey) {
+            auth.logout()
+            toast.error('Sessão expirada ou token inválido. Acesso revogado.', {
+              id: 'auth-session-expired',
+            })
+          }
+        }
+
         throw new ApiError(response.status, `HTTP ${response.status}: ${errorDetail}`, errorDetail)
       }
 

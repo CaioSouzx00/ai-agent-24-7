@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.ratelimit import check_rate_limit
 from app.security import require_api_key
 from app.tools.base import registry
 from app.tools.dynamic import list_dynamic_tools, unregister_dynamic_tool
@@ -36,9 +37,24 @@ class CreateDynamicToolIn(BaseModel):
         }
     )
 
-    name: str = Field(..., description="Unique snake_case identifier for the dynamic tool")
-    description: str = Field(..., description="Actionable description of tool functionality")
-    url: str = Field(..., description="Target public HTTPS endpoint")
+    name: str = Field(
+        ...,
+        min_length=2,
+        max_length=64,
+        description="Unique snake_case identifier for the dynamic tool",
+    )
+    description: str = Field(
+        ...,
+        min_length=5,
+        max_length=500,
+        description="Actionable description of tool functionality",
+    )
+    url: str = Field(
+        ...,
+        min_length=8,
+        max_length=2048,
+        description="Target public HTTPS endpoint",
+    )
     method: str = Field(default="GET", description="HTTP method (GET, POST, PUT, DELETE)")
     parameters: dict[str, Any] | None = Field(
         default=None, description="JSON Schema object describing required parameters"
@@ -60,7 +76,10 @@ async def get_dynamic_tools() -> list[dict[str, Any]]:
     return list_dynamic_tools()
 
 
-@router.post("/tools/dynamic", dependencies=[Depends(require_api_key)])
+@router.post(
+    "/tools/dynamic",
+    dependencies=[Depends(require_api_key), Depends(check_rate_limit)],
+)
 async def create_dynamic_tool_endpoint(body: CreateDynamicToolIn) -> dict[str, str]:
     """Register a new HTTP tool dynamically at runtime."""
     tool = registry.get("create_tool")
@@ -79,7 +98,10 @@ async def create_dynamic_tool_endpoint(body: CreateDynamicToolIn) -> dict[str, s
     return {"message": result, "tool": body.name}
 
 
-@router.delete("/tools/dynamic/{name}", dependencies=[Depends(require_api_key)])
+@router.delete(
+    "/tools/dynamic/{name}",
+    dependencies=[Depends(require_api_key), Depends(check_rate_limit)],
+)
 async def delete_dynamic_tool_endpoint(name: str) -> dict[str, bool]:
     """Unregister and remove a dynamic tool by name."""
     if not unregister_dynamic_tool(name):

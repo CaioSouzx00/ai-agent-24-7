@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Query, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
@@ -74,6 +75,32 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="AI Agent 24/7", version="0.2.0", lifespan=lifespan)
+
+# Restrictive CORS configuration
+_settings = get_settings()
+_cors_origins = [o.strip() for o in _settings.cors_origins.split(",") if o.strip()]
+if _settings.app_env == "prod" and "*" in _cors_origins:
+    log.warning("Wildcard CORS origin '*' in production is disallowed. Sanitizing.")
+    _cors_origins = [o for o in _cors_origins if o != "*"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_cors_origins or ["http://localhost:5173", "http://localhost:8080"],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["*"],
+)
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    """Sanitized 500 error handler preventing internal stack trace leaks to clients."""
+    log.exception("Unhandled server exception at %s %s: %s", request.method, request.url.path, exc)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal Server Error"},
+    )
+
 
 # Mount modular routers
 app.include_router(chat.router)
