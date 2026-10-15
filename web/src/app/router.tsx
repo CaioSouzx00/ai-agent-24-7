@@ -5,6 +5,7 @@ import { HandoffView } from '@/features/handoff'
 import { ChatView } from '@/features/chat'
 import { ToolsView } from '@/features/tools'
 import { EditorialView } from '@/features/editorial/editorial-view'
+import { NotFoundView } from './not-found-view'
 import { Preloader } from '@/shared/motion/preloader'
 import { CustomCursor } from '@/shared/motion/cursor'
 import { SmoothScrollProvider } from '@/shared/motion/smooth-scroll'
@@ -63,8 +64,13 @@ export function AppRouter() {
         )
       case '/':
       case '/editorial':
-      default:
         return <EditorialView onNavigateToConsole={navigate} />
+      default:
+        return (
+          <AppLayout currentPath={currentPath} onNavigate={navigate}>
+            <NotFoundView requestedPath={currentPath} onNavigate={navigate} />
+          </AppLayout>
+        )
     }
   }
 

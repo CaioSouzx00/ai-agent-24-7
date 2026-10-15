@@ -10,6 +10,7 @@ export function ToolsView() {
   const [search, setSearch] = useState('')
   const [filterType, setFilterType] = useState<'all' | 'core' | 'dynamic'>('all')
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [toolToDelete, setToolToDelete] = useState<string | null>(null)
 
   const { data: tools = [], isLoading, isError, error, refetch } = useTools()
   const { createTool, deleteTool } = useToolMutations()
@@ -190,7 +191,7 @@ export function ToolsView() {
 
                   {tool.isDynamic && (
                     <button
-                      onClick={() => deleteTool.mutate(tool.name)}
+                      onClick={() => setToolToDelete(tool.name)}
                       disabled={deleteTool.isPending}
                       data-cursor
                       data-cursor-label="remover"
@@ -260,11 +261,12 @@ export function ToolsView() {
                 </label>
                 <Input
                   {...register('name')}
+                  maxLength={64}
                   placeholder="Ex: consulta_clima, rastrear_pedido, preco_dolar"
                   className="w-full bg-[#000000]"
                 />
                 <p className="mt-1 font-mono text-[10px] text-[#818181]">
-                  Use letras minúsculas e sublinhado (snake_case).
+                  Use letras minúsculas e sublinhado (snake_case, máx. 64 caracteres).
                 </p>
                 {errors.name && <p className="mt-1 font-mono text-xs text-red-400">{errors.name.message}</p>}
               </div>
@@ -275,11 +277,12 @@ export function ToolsView() {
                 </label>
                 <Input
                   {...register('description')}
+                  maxLength={500}
                   placeholder="Ex: Busca a previsão do tempo para a cidade informada pelo cliente"
                   className="w-full bg-[#000000]"
                 />
                 <p className="mt-1 font-mono text-[10px] text-[#818181]">
-                  Escreva com clareza. O robô lê essa frase para saber exatamente quando deve usá-la!
+                  Escreva com clareza. O robô lê essa frase para saber exatamente quando deve usá-la (máx. 500 caracteres)!
                 </p>
                 {errors.description && (
                   <p className="mt-1 font-mono text-xs text-red-400">{errors.description.message}</p>
@@ -292,6 +295,7 @@ export function ToolsView() {
                 </label>
                 <Input
                   {...register('url')}
+                  maxLength={2048}
                   placeholder="https://api.seuservidor.com/v1/consulta"
                   className="w-full bg-[#000000]"
                 />
@@ -322,6 +326,43 @@ export function ToolsView() {
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Dialog for Destructive Delete */}
+      {toolToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+          <div className="relative w-full max-w-md border border-red-900/60 bg-[#0D0D0D] p-6 text-[#EDEDED] shadow-2xl">
+            <h3 className="font-syne text-lg font-bold uppercase text-red-400 mb-2">
+              Confirmar Exclusão de Ferramenta
+            </h3>
+            <p className="font-sans text-xs text-[#A0A0A0] leading-relaxed mb-6">
+              Tem certeza de que deseja remover a habilidade <strong className="text-[#EDEDED] font-mono">&quot;{toolToDelete}&quot;</strong>? O robô não poderá mais chamá-la durante as conversas com os clientes.
+            </p>
+            <div className="flex justify-end gap-2 pt-4 border-t border-[#2B2B2B]">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setToolToDelete(null)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                disabled={deleteTool.isPending}
+                onClick={() => {
+                  deleteTool.mutate(toolToDelete, {
+                    onSettled: () => setToolToDelete(null),
+                  })
+                }}
+                className="bg-red-600 hover:bg-red-700 text-white font-mono text-xs"
+              >
+                {deleteTool.isPending ? 'REMOVENDO...' : 'SIM, REMOVER FERRAMENTA'}
+              </Button>
+            </div>
           </div>
         </div>
       )}

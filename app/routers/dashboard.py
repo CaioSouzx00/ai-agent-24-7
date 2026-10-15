@@ -4,11 +4,12 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from fastapi.responses import HTMLResponse
 
 from app.dashboard import get_dashboard_html
 from app.metrics import BUSINESS_TRACKER
+from app.security import require_api_key
 
 router = APIRouter(tags=["dashboard"])
 
@@ -19,7 +20,7 @@ async def dashboard() -> HTMLResponse:
     return get_dashboard_html()
 
 
-@router.get("/metrics/business")
+@router.get("/metrics/business", dependencies=[Depends(require_api_key)])
 async def business_metrics() -> dict[str, Any]:
     """Retrieve operational business telemetry: handoffs/day, top tools, and latencies."""
     return BUSINESS_TRACKER.get_summary()

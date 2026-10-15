@@ -41,6 +41,9 @@ class Settings(BaseSettings):
     rate_limit_per_minute: int = 60  # Max requests per minute per user/session/key
     rate_limit_enabled: bool = True  # Enable/disable rate limiting
     gmail_pubsub_verification_token: str = ""  # Secret token for Gmail Cloud Pub/Sub push webhook
+    cors_origins: str = (
+        "http://localhost:5173,http://localhost:8080,http://127.0.0.1:5173,http://127.0.0.1:8080"
+    )
 
 
 @lru_cache

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { HelpCircle, UserCheck } from 'lucide-react'
+import { HelpCircle, UserCheck, ArrowLeft } from 'lucide-react'
 import { Skeleton } from '@/shared/ui'
 import { useTickets, useTicketDetail } from '../api/use-tickets'
 import { useTicketMutations } from '../api/use-ticket-mutations'
@@ -33,20 +33,34 @@ export function HandoffView() {
 
   return (
     <div className="grid h-[calc(100vh-56px)] grid-cols-1 md:grid-cols-[360px_1fr] lg:grid-cols-[400px_1fr] overflow-hidden bg-[#000000]">
-      {/* Sidebar List */}
-      <TicketList
-        tickets={tickets}
-        selectedTicketId={selectedTicketId}
-        onSelectTicket={(id) => setSelectedTicketId(id)}
-        statusFilter={statusFilter}
-        onFilterChange={setStatusFilter}
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        isLoading={isLoadingList}
-      />
+      {/* Sidebar List - Responsive Mobile Toggle */}
+      <div className={`h-full overflow-hidden ${selectedTicketId ? 'hidden md:block' : 'block'}`}>
+        <TicketList
+          tickets={tickets}
+          selectedTicketId={selectedTicketId}
+          onSelectTicket={(id) => setSelectedTicketId(id)}
+          statusFilter={statusFilter}
+          onFilterChange={setStatusFilter}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          isLoading={isLoadingList}
+        />
+      </div>
 
-      {/* Main Conversation Pane */}
-      <div className="flex h-full flex-col bg-[#000000] relative">
+      {/* Main Conversation Pane - Responsive Mobile Toggle */}
+      <div className={`h-full flex-col bg-[#000000] relative ${selectedTicketId ? 'flex' : 'hidden md:flex'}`}>
+        {selectedTicketId && (
+          <div className="md:hidden border-b border-[#2B2B2B] bg-[#0D0D0D] p-3 flex items-center justify-between">
+            <button
+              onClick={() => setSelectedTicketId(null)}
+              className="flex items-center gap-1.5 font-mono text-xs text-[#C6F432] hover:underline"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              <span>VOLTAR PARA A FILA</span>
+            </button>
+            <span className="font-mono text-[10px] text-[#818181]">#{selectedTicketId}</span>
+          </div>
+        )}
         {selectedTicketId ? (
           isLoadingDetail && !activeTicket ? (
             <div className="p-8 space-y-4">

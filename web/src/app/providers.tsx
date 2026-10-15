@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useAuthStore } from '@/shared/lib/auth-store'
+import { ErrorBoundary } from '@/shared/ui'
 
 export function AppProviders({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
@@ -38,5 +39,9 @@ export function AppProviders({ children }: { children: ReactNode }) {
     }
   }, [theme])
 
-  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  return (
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    </ErrorBoundary>
+  )
 }
