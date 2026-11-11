@@ -10,6 +10,7 @@ from typing import NamedTuple
 
 from fastapi import HTTPException, Request
 
+from app.analytics import ANALYTICS
 from app.config import get_settings
 from app.metrics import RATELIMIT_EXCEEDED
 
@@ -102,6 +103,13 @@ async def check_rate_limit(request: Request, session_id: str | None = None) -> N
 
     if not res.allowed:
         RATELIMIT_EXCEEDED.labels(identifier_type=id_type).inc()
+        # Chat turns rejected here never reach the runner: count them as outcome=rate_limited.
+        is_chat = request.url.path.rstrip("/") == "/chat"
+        ANALYTICS.record_rate_limited(
+            id_type,
+            channel="rest" if is_chat else None,
+            tenant_id=request.headers.get("x-tenant-id") or "default",
+        )
         raise HTTPException(
             status_code=429,
             detail="Rate limit exceeded. Please try again later.",

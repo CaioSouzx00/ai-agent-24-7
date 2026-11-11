@@ -40,7 +40,8 @@ class NIMProvider(LLMProvider):
             payload["tool_choice"] = "auto"
         resp = await self._client.post("/chat/completions", json=payload)
         resp.raise_for_status()
-        msg = resp.json()["choices"][0]["message"]
+        data = resp.json()
+        msg = data["choices"][0]["message"]
         calls = [
             ToolCall(
                 id=tc.get("id", ""),
@@ -49,7 +50,12 @@ class NIMProvider(LLMProvider):
             )
             for tc in msg.get("tool_calls") or []
         ]
-        return LLMResponse(content=msg.get("content") or "", tool_calls=calls)
+        usage = {
+            k: int(v)
+            for k, v in (data.get("usage") or {}).items()
+            if k in ("prompt_tokens", "completion_tokens", "total_tokens") and isinstance(v, int)
+        }
+        return LLMResponse(content=msg.get("content") or "", tool_calls=calls, usage=usage)
 
     async def embed(self, texts: list[str]) -> list[list[float]]:
         resp = await self._client.post(

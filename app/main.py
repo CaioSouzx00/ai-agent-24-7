@@ -17,6 +17,7 @@ from fastapi.staticfiles import StaticFiles
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
 from app.agent.graph import build_graph
+from app.analytics import ANALYTICS
 from app.channels import get_senders
 from app.config import get_settings
 from app.handoff_api import api as handoff_api
@@ -25,7 +26,7 @@ from app.health import readiness
 from app.i18n import detect_language, get_localized_message
 from app.llm import get_llm
 from app.memory import InMemorySessionStore, LongTermMemory, SessionStore
-from app.routers import chat, dashboard, tools, voice
+from app.routers import analytics, chat, dashboard, tools, voice
 from app.runner import run_agent
 from app.security import verify_meta_signature, verify_slack_signature
 from app.tickets import InMemoryTicketStore, RedisTicketStore, notify_humans
@@ -49,12 +50,19 @@ async def lifespan(app: FastAPI):
     if not await session_store.ping():
         log.warning("Redis unreachable; using in-memory sessions (not persistent)")
         session_store = InMemorySessionStore()
+        ANALYTICS.record_fallback("redis_sessions")
+        ANALYTICS.record_fallback("redis_tickets")
+    else:
+        ANALYTICS.clear_fallback("redis_sessions")
+        ANALYTICS.clear_fallback("redis_tickets")
 
     memory = None
     try:
         memory = await LongTermMemory.connect(s.database_url, llm)
+        ANALYTICS.clear_fallback("pgvector_memory")
     except Exception as exc:  # noqa: BLE001
         log.warning("Postgres/pgvector unavailable; long-term memory disabled (%s)", exc)
+        ANALYTICS.record_fallback("pgvector_memory")
 
     tickets = (
         RedisTicketStore(session_store._r)
@@ -107,6 +115,8 @@ app.include_router(chat.router)
 app.include_router(voice.router)
 app.include_router(tools.router)
 app.include_router(dashboard.router)
+app.include_router(analytics.router)
+app.include_router(analytics.spa)
 app.include_router(handoff_public)
 app.include_router(handoff_api)
 
@@ -190,6 +200,8 @@ async def ready():
 
 @app.get("/metrics")
 async def metrics():
+    # Ticket gauges are derived from the store (cached 10s) so they are correct on every scrape.
+    await ANALYTICS.refresh_ticket_gauges(getattr(app.state, "tickets", None))
     return PlainTextResponse(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
@@ -205,6 +217,7 @@ async def slack_webhook(request: Request, background: BackgroundTasks):
         request.headers.get("x-slack-signature"),
         body,
     ):
+        ANALYTICS.record_signature_fail("slack")
         raise HTTPException(401, "invalid Slack signature")
     if request.headers.get("x-slack-retry-num"):
         return {"ok": True}  # already handled; avoid duplicate replies on Slack retries
@@ -239,6 +252,7 @@ async def whatsapp_webhook(request: Request, background: BackgroundTasks):
     if not secret:
         raise HTTPException(503, "WHATSAPP_APP_SECRET is not configured")
     if not verify_meta_signature(secret, request.headers.get("x-hub-signature-256"), body):
+        ANALYTICS.record_signature_fail("whatsapp")
         raise HTTPException(401, "invalid WhatsApp signature")
     data = json.loads(body)
     try:
@@ -274,6 +288,7 @@ async def gmail_pubsub_webhook(
         auth_header = request.headers.get("authorization", "")
         token_match = token == expected or auth_header == f"Bearer {expected}"
         if not token_match:
+            ANALYTICS.record_signature_fail("gmail")
             raise HTTPException(403, "invalid Gmail Pub/Sub verification token")
 
     body = await request.body()

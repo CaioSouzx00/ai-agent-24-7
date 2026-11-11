@@ -29,6 +29,18 @@ class UnsafeURLError(ValueError):
 
 
 async def assert_public_url(url: str) -> None:
+    try:
+        await _assert_public_url(url)
+    except UnsafeURLError as exc:
+        # DNS failures are not SSRF attempts; only count scheme/private-address blocks.
+        if not str(exc).startswith("cannot resolve host"):
+            from app.analytics import ANALYTICS
+
+            ANALYTICS.record_ssrf_blocked()
+        raise
+
+
+async def _assert_public_url(url: str) -> None:
     parsed = urlparse(url)
     if parsed.scheme not in ("http", "https") or not parsed.hostname:
         raise UnsafeURLError("only http(s) URLs are allowed")

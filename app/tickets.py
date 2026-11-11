@@ -32,9 +32,39 @@ class Ticket:
     created_at: float = field(default_factory=time.time)
     messages: list[dict[str, Any]] = field(default_factory=list)
     tenant_id: str = "default"
+    # analytics: reason category (see app.metrics.HANDOFF_REASONS) and lifecycle timestamps
+    reason_code: str = "other"
+    claimed_at: float | None = None
+    resolved_at: float | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
+
+
+def _record_claim(t: Ticket) -> None:
+    from app.analytics import ANALYTICS  # local import keeps tickets importable standalone
+
+    ANALYTICS.record_ticket(
+        kind="claimed",
+        ticket_id=t.id,
+        channel=t.channel,
+        tenant_id=t.tenant_id,
+        reason=t.reason_code,
+        seconds=(t.claimed_at or time.time()) - t.created_at,
+    )
+
+
+def _record_resolve(t: Ticket) -> None:
+    from app.analytics import ANALYTICS
+
+    ANALYTICS.record_ticket(
+        kind="resolved",
+        ticket_id=t.id,
+        channel=t.channel,
+        tenant_id=t.tenant_id,
+        reason=t.reason_code,
+        seconds=(t.resolved_at or time.time()) - (t.claimed_at or t.created_at),
+    )
 
 
 class InMemoryTicketStore:
@@ -51,6 +81,7 @@ class InMemoryTicketStore:
         messages: list[dict],
         reason: str = "",
         tenant_id: str = "default",
+        reason_code: str = "other",
     ) -> Ticket:
         resolved_tenant = meta.get("tenant_id") or tenant_id
         t = Ticket(
@@ -60,6 +91,7 @@ class InMemoryTicketStore:
             dict(meta),
             reason=reason,
             tenant_id=resolved_tenant,
+            reason_code=reason_code,
         )
         t.messages = [dict(m) for m in messages]
         self._tickets[t.id] = t
@@ -97,16 +129,26 @@ class InMemoryTicketStore:
     async def claim(self, ticket_id: str, assignee: str) -> Ticket | None:
         t = await self.get(ticket_id)
         if t and t.status in ACTIVE_STATUSES:
+            first_claim = t.claimed_at is None
             t.status, t.assignee = "claimed", assignee
+            if first_claim:
+                t.claimed_at = time.time()
             await self.save(t)
+            if first_claim:
+                _record_claim(t)
             return t
         return None
 
     async def resolve(self, ticket_id: str) -> Ticket | None:
         t = await self.get(ticket_id)
         if t:
+            newly_resolved = t.status != "resolved"
             t.status = "resolved"
+            if newly_resolved:
+                t.resolved_at = time.time()
             await self.save(t)
+            if newly_resolved:
+                _record_resolve(t)
         return t
 
 
@@ -150,6 +192,7 @@ class RedisTicketStore(InMemoryTicketStore):
         messages,
         reason="",
         tenant_id="default",
+        reason_code="other",
     ) -> Ticket:
         resolved_tenant = meta.get("tenant_id") or tenant_id
         t = Ticket(
@@ -159,6 +202,7 @@ class RedisTicketStore(InMemoryTicketStore):
             dict(meta),
             reason=reason,
             tenant_id=resolved_tenant,
+            reason_code=reason_code,
         )
         t.messages = [dict(m) for m in messages]
         await self.save(t)

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { AppLayout } from './layout'
 import { DashboardView } from '@/features/dashboard'
+import { AnalyticsView } from '@/features/analytics'
 import { HandoffView } from '@/features/handoff'
 import { ChatView } from '@/features/chat'
 import { ToolsView } from '@/features/tools'
@@ -60,6 +61,12 @@ export function AppRouter() {
         return (
           <AppLayout currentPath={currentPath} onNavigate={navigate}>
             <DashboardView />
+          </AppLayout>
+        )
+      case '/analytics':
+        return (
+          <AppLayout currentPath={currentPath} onNavigate={navigate}>
+            <AnalyticsView />
           </AppLayout>
         )
       case '/':
