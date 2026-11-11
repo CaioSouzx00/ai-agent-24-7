@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import {
   Activity,
+  BarChart3,
   Bot,
   Key,
   Users,
@@ -34,9 +35,10 @@ export function AppLayout({ children, currentPath, onNavigate }: LayoutProps) {
   const navItems = [
     { num: '00', label: 'INÍCIO', path: '/', icon: Terminal },
     { num: '01', label: 'TELEMETRIA', path: '/dashboard', icon: Activity },
-    { num: '02', label: 'ATENDIMENTO HUMANO', path: '/handoff', icon: Users },
-    { num: '03', label: 'CHAT DO AGENTE', path: '/chat', icon: Bot },
-    { num: '04', label: 'FERRAMENTAS', path: '/tools', icon: Wrench },
+    { num: '02', label: 'ANALYTICS', path: '/analytics', icon: BarChart3 },
+    { num: '03', label: 'ATENDIMENTO HUMANO', path: '/handoff', icon: Users },
+    { num: '04', label: 'CHAT DO AGENTE', path: '/chat', icon: Bot },
+    { num: '05', label: 'FERRAMENTAS', path: '/tools', icon: Wrench },
   ]
 
   const handleSaveAuth = (e: React.FormEvent) => {

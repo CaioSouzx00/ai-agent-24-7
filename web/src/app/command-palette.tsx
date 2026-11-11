@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
   Activity,
+  BarChart3,
   Bot,
   Command as CommandIcon,
   Users,
@@ -73,6 +74,13 @@ export function CommandPalette({ onNavigate }: CommandPaletteProps) {
               >
                 <Activity className="mr-2 h-3.5 w-3.5 text-[#818181]" />
                 <span>[01] TELEMETRIA // PAINEL GERAL & MÉTRICAS</span>
+              </CommandItem>
+              <CommandItem
+                onSelect={() => runCommand(() => onNavigate('/analytics'))}
+                className="cursor-pointer hover:bg-[#1A1A1A] hover:text-[#C6F432] p-2 transition-colors"
+              >
+                <BarChart3 className="mr-2 h-3.5 w-3.5 text-[#818181]" />
+                <span>[02] ANALYTICS // AGENT BEHAVIOR & COCKPIT SRE</span>
               </CommandItem>
               <CommandItem
                 onSelect={() => runCommand(() => onNavigate('/handoff'))}

@@ -60,6 +60,19 @@ export default defineConfig({
         target: 'http://127.0.0.1:8080',
         changeOrigin: true,
       },
+      '/api': {
+        target: 'http://127.0.0.1:8080',
+        changeOrigin: true,
+      },
+      '/analytics': {
+        target: 'http://127.0.0.1:8080',
+        changeOrigin: true,
+        bypass: (req) => {
+          if (req.headers.accept?.includes('text/html')) {
+            return '/index.html'
+          }
+        },
+      },
       '/openapi.json': {
         target: 'http://127.0.0.1:8080',
         changeOrigin: true,

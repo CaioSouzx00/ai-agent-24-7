@@ -18,6 +18,9 @@ class ToolCall:
 class LLMResponse:
     content: str
     tool_calls: list[ToolCall] = field(default_factory=list)
+    # OpenAI-style usage block when the provider returns it:
+    # {"prompt_tokens": int, "completion_tokens": int, "total_tokens": int}
+    usage: dict[str, int] = field(default_factory=dict)
 
 
 class LLMProvider(ABC):

@@ -5,7 +5,9 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, Request, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from app.analytics import ANALYTICS
 from app.config import get_settings
+from app.metrics import RATELIMIT_EXCEEDED
 from app.ratelimit import check_rate_limit, limiter
 from app.runner import run_agent
 from app.security import require_api_key, websocket_authorized
@@ -84,6 +86,10 @@ async def ws_chat(ws: WebSocket, session_id: str) -> None:
                 window_seconds=60,
             )
             if not res.allowed:
+                RATELIMIT_EXCEEDED.labels(identifier_type="session").inc()
+                ANALYTICS.record_rate_limited(
+                    "session", channel="ws", tenant_id=tenant, session_id=session_id
+                )
                 await ws.send_json({"error": "rate_limited", "retry_after": res.retry_after})
                 continue
             await ws.send_json(
