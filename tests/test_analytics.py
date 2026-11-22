@@ -1,5 +1,7 @@
 """Agent Behavior analytics: instrumentation points + /api/analytics endpoints."""
 
+import time
+
 import httpx
 import pytest
 from prometheus_client import REGISTRY
@@ -7,6 +9,7 @@ from prometheus_client import REGISTRY
 from app.agent.graph import build_graph
 from app.agent.handoff import handoff_reason
 from app.analytics import ANALYTICS, AnalyticsStore, classify_tool_error, percentile
+from app.analytics_demo import seed_demo
 from app.llm.base import LLMProvider, LLMResponse, ToolCall
 from app.main import app
 from app.memory import InMemorySessionStore
@@ -138,7 +141,7 @@ async def test_graph_error_is_counted():
 
 def test_timeseries_grouping_and_validation():
     store = AnalyticsStore()
-    store.seed_demo(hours=3, turns_per_hour=20)
+    seed_demo(store, hours=3, turns_per_hour=20)
     ts = store.timeseries("requests", "6h", "1h", group_by="channel")
     assert ts["points"] and all("labels" in p for p in ts["points"])
     with pytest.raises(ValueError):
@@ -147,8 +150,41 @@ def test_timeseries_grouping_and_validation():
         store.timeseries("requests", group_by="tool")
 
 
+def test_demo_seed_never_touches_prometheus():
+    labels = {"model": "demo/llama-3.1-70b", "status": "success"}
+    before = _val("agent_llm_calls_total", labels)
+    store = AnalyticsStore()
+    assert seed_demo(store, hours=2, turns_per_hour=10) > 0
+    assert _val("agent_llm_calls_total", labels) == before  # muted
+    assert store.summary("6h")["llm_calls"] > 0  # but the analytics window is populated
+    assert store._emit is True  # mute is scoped
+
+
+def test_rate_limit_kpi_compares_same_scope():
+    store = AnalyticsStore()
+    now = time.time()
+    with store.prometheus_muted():
+        store.record_rate_limited("ip", ts=now - 1800)  # non-chat endpoint, current hour
+        store.record_rate_limited("ip", channel="rest", ts=now - 5400)  # chat, previous hour
+    s = store.summary("1h")
+    assert s["health"]["rate_limited_total"] == 1
+    assert s["previous"]["rate_limited_total"] == 1
+
+
+async def test_ticket_wait_for_open_and_unclaimed_resolved():
+    tickets = InMemoryTicketStore()
+    t_open = await tickets.create("a", "rest", {}, [])
+    t_open.created_at -= 120
+    t_res = await tickets.create("b", "rest", {}, [])
+    await tickets.resolve(t_res.id)  # resolved without ever being claimed
+    rows = {r["id"]: r for r in (await ANALYTICS.tickets(tickets))["items"]}
+    assert rows[t_open.id]["wait_seconds"] >= 120
+    assert rows[t_res.id]["wait_seconds"] is None
+    assert rows[t_res.id]["resolution_seconds"] is not None
+
+
 async def test_analytics_endpoints():
-    ANALYTICS.seed_demo(hours=2, turns_per_hour=15)
+    seed_demo(ANALYTICS, hours=2, turns_per_hour=15)
     async with httpx.AsyncClient(
         transport=httpx.ASGITransport(app=app), base_url="http://test"
     ) as c:
@@ -169,4 +205,3 @@ async def test_analytics_endpoints():
         assert r.status_code == 200 and r.json()["recent"]
         assert (await c.get("/api/analytics/tools/does_not_exist")).status_code == 404
         assert (await c.get("/analytics")).status_code == 200
-

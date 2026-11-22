@@ -14,7 +14,7 @@ import {
 } from 'recharts'
 import type { TimeseriesResponse } from '../schemas/analytics-schemas'
 import { C, axisProps, colorFor, fmtDateTime, fmtTime, gridProps } from '../lib/format'
-import { ChartTooltipBox, SeriesLegend } from './chart-primitives'
+import { ChartTooltipBox, SeriesLegend, type TooltipLikeProps } from './chart-primitives'
 
 export type Row = { ts: number } & Record<string, number | null>
 
@@ -43,12 +43,6 @@ export function mergeSeries(series: Record<string, TimeseriesResponse | undefine
     }
   }
   return [...rows.values()].sort((a, b) => a.ts - b.ts)
-}
-
-interface TooltipLikeProps {
-  active?: boolean
-  label?: unknown
-  payload?: ReadonlyArray<{ dataKey?: unknown; value?: unknown; color?: string }>
 }
 
 interface Props {

@@ -22,11 +22,11 @@ Limitations (documented on purpose):
 from __future__ import annotations
 
 import math
-import random
 import threading
 import time
 from collections import deque
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -90,6 +90,28 @@ def _ratio(num: int, den: int) -> float | None:
 
 def _r(v: float | None, nd: int = 4) -> float | None:
     return None if v is None else round(v, nd)
+
+
+def latency_stats(values: list[float], nd: int = 4) -> dict[str, float | None]:
+    """avg/p50/p95/p99/max block shared by every latency panel."""
+    return {
+        "avg": _r(_avg(values), nd),
+        "p50": _r(percentile(values, 50), nd),
+        "p95": _r(percentile(values, 95), nd),
+        "p99": _r(percentile(values, 99), nd),
+        "max": _r(max(values) if values else None, nd),
+    }
+
+
+def _bucketer(start: float, end: float, step: float) -> tuple[float, int, Callable[[float], int]]:
+    """Aligned bucket origin, bucket count and a ts -> index function (clamped)."""
+    b0 = math.floor(start / step) * step
+    n = max(1, math.ceil((end - b0) / step))
+
+    def index(ts: float) -> int:
+        return min(n - 1, max(0, int((ts - b0) // step)))
+
+    return b0, n, index
 
 
 def resolve_window(
@@ -281,6 +303,35 @@ class AnalyticsStore:
         self._degraded: set[str] = set()
         self._cache: dict[tuple, tuple[float, Any]] = {}
         self._ticket_gauge_at = 0.0
+        # False while synthetic data is ingested: Prometheus must only ever see real traffic.
+        self._emit = True
+
+    @contextmanager
+    def prometheus_muted(self) -> Iterator[None]:
+        """Record into the analytics window only (used by the dev/test demo seeder)."""
+        previous, self._emit = self._emit, False
+        try:
+            yield
+        finally:
+            self._emit = previous
+            self.reorder()
+
+    def reorder(self) -> None:
+        """Restore time order after back-dated ingestion and drop cached aggregates."""
+        with self._lock:
+            for dq in (
+                self._turns,
+                self._tools,
+                self._llm,
+                self._handoffs,
+                self._tickets,
+                self._health,
+                self._samples,
+            ):
+                ordered = sorted(dq, key=lambda e: e.ts)
+                dq.clear()
+                dq.extend(ordered)
+            self._cache.clear()
 
     # ------------------------------------------------------------------ reset
     def reset(self) -> None:
@@ -318,11 +369,12 @@ class AnalyticsStore:
     ) -> None:
         ts = ts if ts is not None else time.time()
         tools = list(tools)
-        CONVERSATION_TURNS.labels(channel=channel, tenant_id=tenant_id, outcome=outcome).inc()
-        if outcome in AGENT_OUTCOMES:
-            if cycles:
-                GRAPH_CYCLES.labels(channel=channel).inc(cycles)
-            GRAPH_CYCLES_PER_REQUEST.labels(channel=channel).observe(cycles)
+        if self._emit:
+            CONVERSATION_TURNS.labels(channel=channel, tenant_id=tenant_id, outcome=outcome).inc()
+            if outcome in AGENT_OUTCOMES:
+                if cycles:
+                    GRAPH_CYCLES.labels(channel=channel).inc(cycles)
+                GRAPH_CYCLES_PER_REQUEST.labels(channel=channel).observe(cycles)
         ev = TurnEvent(
             ts,
             session_id,
@@ -355,9 +407,10 @@ class AnalyticsStore:
         session_id: str = "",
         ts: float | None = None,
     ) -> None:
-        BUSINESS_TRACKER.record_tool(tool, duration, success, channel=channel)
-        if not success:
-            TOOL_ERRORS.labels(tool_name=tool, error_type=error_type or "exception").inc()
+        if self._emit:
+            BUSINESS_TRACKER.record_tool(tool, duration, success, channel=channel)
+            if not success:
+                TOOL_ERRORS.labels(tool_name=tool, error_type=error_type or "exception").inc()
         with self._lock:
             self._tools.append(
                 ToolEvent(
@@ -385,14 +438,15 @@ class AnalyticsStore:
         tenant_id: str = "default",
         ts: float | None = None,
     ) -> None:
-        LLM_CALLS.labels(model=model, status="success" if success else "error").inc()
-        LLM_LATENCY.labels(model=model).observe(duration)
-        if prompt_tokens:
-            LLM_TOKENS.labels(model=model, type="prompt").inc(prompt_tokens)
-        if completion_tokens:
-            LLM_TOKENS.labels(model=model, type="completion").inc(completion_tokens)
-        if context_tokens:
-            CONTEXT_TOKENS.labels(channel=channel).observe(context_tokens)
+        if self._emit:
+            LLM_CALLS.labels(model=model, status="success" if success else "error").inc()
+            LLM_LATENCY.labels(model=model).observe(duration)
+            if prompt_tokens:
+                LLM_TOKENS.labels(model=model, type="prompt").inc(prompt_tokens)
+            if completion_tokens:
+                LLM_TOKENS.labels(model=model, type="completion").inc(completion_tokens)
+            if context_tokens:
+                CONTEXT_TOKENS.labels(channel=channel).observe(context_tokens)
         with self._lock:
             self._llm.append(
                 LLMEvent(
@@ -417,7 +471,8 @@ class AnalyticsStore:
         ts: float | None = None,
     ) -> None:
         reason = reason if reason in HANDOFF_REASONS else "other"
-        BUSINESS_TRACKER.record_handoff(channel, tenant_id, reason=reason)
+        if self._emit:
+            BUSINESS_TRACKER.record_handoff(channel, tenant_id, reason=reason)
         ts = ts if ts is not None else time.time()
         with self._lock:
             self._handoffs.append(HandoffEvent(ts, channel, tenant_id, reason, session_id))
@@ -434,9 +489,9 @@ class AnalyticsStore:
         ts: float | None = None,
     ) -> None:
         seconds = max(0.0, seconds)
-        if kind == "claimed":
+        if self._emit and kind == "claimed":
             HANDOFF_WAIT.labels(channel=channel).observe(seconds)
-        elif kind == "resolved":
+        elif self._emit and kind == "resolved":
             HANDOFF_RESOLUTION.labels(channel=channel).observe(seconds)
         with self._lock:
             self._tickets.append(
@@ -452,23 +507,29 @@ class AnalyticsStore:
             )
 
     def record_memory(self, tier: str, seconds: float, hit: bool, ts: float | None = None) -> None:
-        MEMORY_RETRIEVAL.labels(tier=tier).observe(seconds)
-        (MEMORY_HITS if hit else MEMORY_MISSES).labels(tier=tier).inc()
+        if self._emit:
+            MEMORY_RETRIEVAL.labels(tier=tier).observe(seconds)
+            (MEMORY_HITS if hit else MEMORY_MISSES).labels(tier=tier).inc()
         with self._lock:
             self._samples.append(
                 SampleEvent(ts if ts is not None else time.time(), "memory", tier, seconds, hit)
             )
 
     def record_node(self, node: str, seconds: float, ts: float | None = None) -> None:
-        GRAPH_NODE_DURATION.labels(node=node).observe(seconds)
+        if self._emit:
+            GRAPH_NODE_DURATION.labels(node=node).observe(seconds)
         with self._lock:
             self._samples.append(
                 SampleEvent(ts if ts is not None else time.time(), "node", node, seconds)
             )
 
-    def _health_event(self, kind: str, label: str, channel: str = "system") -> None:
+    def _health_event(
+        self, kind: str, label: str, channel: str = "system", ts: float | None = None
+    ) -> None:
         with self._lock:
-            self._health.append(HealthEvent(time.time(), kind, label, channel))
+            self._health.append(
+                HealthEvent(ts if ts is not None else time.time(), kind, label, channel)
+            )
 
     def record_fallback(self, component: str, sticky: bool = True) -> None:
         """``sticky`` = the component stays degraded (startup fallback) vs. a transient
@@ -500,10 +561,11 @@ class AnalyticsStore:
         channel: str | None = None,
         tenant_id: str = "default",
         session_id: str = "",
+        ts: float | None = None,
     ) -> None:
         """Called next to ``RATELIMIT_EXCEEDED``. When ``channel`` is given the rejection was a
         chat turn, so it is also counted as a turn with outcome=rate_limited."""
-        self._health_event("rate_limited", identifier_type, channel or "system")
+        self._health_event("rate_limited", identifier_type, channel or "system", ts=ts)
         if channel:
             self.record_turn(
                 session_id=session_id or "unknown",
@@ -511,6 +573,7 @@ class AnalyticsStore:
                 tenant_id=tenant_id,
                 outcome="rate_limited",
                 duration=0.0,
+                ts=ts,
             )
 
     # ------------------------------------------------------------ conversations
@@ -553,8 +616,9 @@ class AnalyticsStore:
         if conv.observed:
             return
         conv.observed = True
-        CONVERSATION_DURATION.labels(channel=conv.channel).observe(conv.duration)
-        TOOLS_PER_CONVERSATION.observe(conv.tool_calls)
+        if self._emit:
+            CONVERSATION_DURATION.labels(channel=conv.channel).observe(conv.duration)
+            TOOLS_PER_CONVERSATION.observe(conv.tool_calls)
 
     def _close(self, key: str, conv: Conversation) -> None:
         self._observe_conversation(conv)
@@ -567,7 +631,8 @@ class AnalyticsStore:
         for key, conv in list(self._active.items()):
             if now - conv.last_at > IDLE_TIMEOUT_SECONDS:
                 self._close(key, conv)
-        ACTIVE_SESSIONS.set(len(self._active))
+        if self._emit:
+            ACTIVE_SESSIONS.set(len(self._active))
         cutoff = now - RETENTION_SECONDS
         for dq in (self._turns, self._tools, self._llm, self._handoffs, self._tickets):
             while dq and dq[0].ts < cutoff:
@@ -625,13 +690,7 @@ class AnalyticsStore:
             "handoff_rate": _r(_ratio(outcomes["handoff"], agent_turns)),
             "error_rate": _r(_ratio(outcomes["error"], agent_turns)),
             "rate_limited": outcomes["rate_limited"],
-            "latency": {
-                "avg": _r(_avg(durations)),
-                "p50": _r(percentile(durations, 50)),
-                "p95": _r(percentile(durations, 95)),
-                "p99": _r(percentile(durations, 99)),
-                "max": _r(max(durations) if durations else None),
-            },
+            "latency": latency_stats(durations),
             "tool_calls": tool_calls,
             "avg_tools_per_turn": _r(_ratio(tool_calls, agent_turns), 3),
             "llm_calls": llm_calls,
@@ -645,7 +704,6 @@ class AnalyticsStore:
             by_tool.setdefault(e.tool, []).append(e)
         rows = []
         for name, evs in by_tool.items():
-            durs = [e.duration for e in evs]
             errors = [e for e in evs if not e.success]
             err_types: dict[str, int] = {}
             channels: dict[str, int] = {}
@@ -660,13 +718,7 @@ class AnalyticsStore:
                     "calls": len(evs),
                     "errors": len(errors),
                     "error_rate": _r(_ratio(len(errors), len(evs))) or 0.0,
-                    "latency": {
-                        "avg": _r(_avg(durs)),
-                        "p50": _r(percentile(durs, 50)),
-                        "p95": _r(percentile(durs, 95)),
-                        "p99": _r(percentile(durs, 99)),
-                        "max": _r(max(durs)),
-                    },
+                    "latency": latency_stats([e.duration for e in evs]),
                     "error_types": err_types,
                     "channels": channels,
                     "last_called_at": evs[-1].ts,
@@ -699,6 +751,7 @@ class AnalyticsStore:
             handoffs = self._window(self._handoffs, start, end, channel, tenant_id)
             tickets = self._window(self._tickets, start, end, channel, tenant_id)
             health = self._window(self._health, start, end)
+            prev_health = self._window(self._health, start - span, start)
             samples = self._window(self._samples, start, end)
             active_sessions = sum(
                 1 for c in self._active.values() if _match(c, channel, tenant_id) and not c.closed
@@ -737,9 +790,9 @@ class AnalyticsStore:
         llm_durs = [e.duration for e in llm]
 
         # health
-        def _count(kind: str) -> dict[str, int]:
+        def _count(kind: str, events: list[HealthEvent] = health) -> dict[str, int]:
             out: dict[str, int] = {}
-            for h in health:
+            for h in events:
                 if h.kind == kind and (
                     kind not in ("rate_limited", "signature_fail")
                     or not channel
@@ -783,6 +836,8 @@ class AnalyticsStore:
                 "error_rate": prev["error_rate"],
                 "latency_p95": prev["latency"]["p95"],
                 "rate_limited": prev["rate_limited"],
+                # same scope as health.rate_limited_total (all endpoints), for a fair KPI delta
+                "rate_limited_total": sum(_count("rate_limited", prev_health).values()),
             },
             "tools": {
                 "total_calls": len(tools),
@@ -803,11 +858,7 @@ class AnalyticsStore:
             "llm": {
                 "calls": len(llm),
                 "errors": sum(1 for e in llm if not e.success),
-                "latency": {
-                    "avg": _r(_avg(llm_durs)),
-                    "p50": _r(percentile(llm_durs, 50)),
-                    "p95": _r(percentile(llm_durs, 95)),
-                },
+                "latency": latency_stats(llm_durs),
                 "tokens": {
                     "prompt": sum(e.prompt_tokens for e in llm),
                     "completion": sum(e.completion_tokens for e in llm),
@@ -838,20 +889,19 @@ class AnalyticsStore:
         }
 
     def _sparklines(self, turns, tools, health, start, end, step) -> dict[str, list[dict]]:
-        b0 = math.floor(start / step) * step
-        n = max(1, math.ceil((end - b0) / step))
+        b0, n, idx = _bucketer(start, end, step)
         buckets: list[list[TurnEvent]] = [[] for _ in range(n)]
         tool_b = [[0, 0] for _ in range(n)]
         rl_b = [0] * n
         for t in turns:
-            buckets[min(n - 1, int((t.ts - b0) // step))].append(t)
+            buckets[idx(t.ts)].append(t)
         for e in tools:
-            i = min(n - 1, int((e.ts - b0) // step))
+            i = idx(e.ts)
             tool_b[i][0] += 1
             tool_b[i][1] += 0 if e.success else 1
         for h in health:
             if h.kind == "rate_limited":
-                rl_b[min(n - 1, max(0, int((h.ts - b0) // step)))] += 1
+                rl_b[idx(h.ts)] += 1
         out: dict[str, list[dict]] = {
             k: [] for k in ("requests", "autonomous_rate", "handoff_rate", "latency_p95")
         }
@@ -1018,15 +1068,13 @@ class AnalyticsStore:
                 return ev.tool
             return str(getattr(ev, group_by, "") or "unknown")
 
-        b0 = math.floor(start / step_s) * step_s
-        n = max(1, math.ceil((end - b0) / step_s))
+        b0, n, idx = _bucketer(start, end, step_s)
         groups: dict[str, list[list]] = {}
         for ev in events:
             if metric == "tool_errors" and group_by == "error_type" and ev.success:
                 continue
             g = label_of(ev) if group_by else "__all__"
-            bucket_list = groups.setdefault(g, [[] for _ in range(n)])
-            bucket_list[min(n - 1, max(0, int((ev.ts - b0) // step_s)))].append(ev)
+            groups.setdefault(g, [[] for _ in range(n)])[idx(ev.ts)].append(ev)
         if not groups:
             groups["__all__"] = [[] for _ in range(n)]
 
@@ -1074,7 +1122,7 @@ class AnalyticsStore:
         rows.sort(key=lambda r: r["last_at"], reverse=True)
         dist: dict[str, int] = {}
         for r in rows:
-            k = str(min(r["tool_calls"], 10)) if r["tool_calls"] < 10 else "10+"
+            k = str(r["tool_calls"]) if r["tool_calls"] < 10 else "10+"
             dist[k] = dist.get(k, 0) + 1
         return {
             "total": len(rows),
@@ -1129,11 +1177,10 @@ class AnalyticsStore:
             return None
         stats = self._tool_ranking(events)[0]
         step = auto_step(end - start, target_points=40)
-        b0 = math.floor(start / step) * step
-        n = max(1, math.ceil((end - b0) / step))
+        b0, n, idx = _bucketer(start, end, step)
         buckets: list[list[ToolEvent]] = [[] for _ in range(n)]
         for e in events:
-            buckets[min(n - 1, int((e.ts - b0) // step))].append(e)
+            buckets[idx(e.ts)].append(e)
         series = [
             {
                 "ts": b0 + i * step,
@@ -1174,10 +1221,10 @@ class AnalyticsStore:
                 continue
             claimed_at = getattr(t, "claimed_at", None)
             resolved_at = getattr(t, "resolved_at", None)
-            wait = (claimed_at or (now if t.status == "open" else None) or 0) - t.created_at
-            resolution = None
-            if resolved_at:
-                resolution = resolved_at - (claimed_at or t.created_at)
+            # queue wait: created -> claimed; still-open tickets keep accruing wait until now
+            wait_end = claimed_at or (now if t.status == "open" else None)
+            wait = wait_end - t.created_at if wait_end else None
+            resolution = resolved_at - (claimed_at or t.created_at) if resolved_at else None
             rows.append(
                 {
                     "id": t.id,
@@ -1191,8 +1238,12 @@ class AnalyticsStore:
                     "created_at": t.created_at,
                     "claimed_at": claimed_at,
                     "resolved_at": resolved_at,
-                    "wait_seconds": round(wait, 1) if wait and wait > 0 else None,
-                    "resolution_seconds": round(resolution, 1) if resolution else None,
+                    "wait_seconds": round(wait, 1) if wait is not None and wait >= 0 else None,
+                    "resolution_seconds": (
+                        round(resolution, 1)
+                        if resolution is not None and resolution >= 0
+                        else None
+                    ),
                     "messages": len(t.messages),
                 }
             )
@@ -1200,7 +1251,9 @@ class AnalyticsStore:
         for r in rows:
             counts[r["status"]] = counts.get(r["status"], 0) + 1
         open_waits = [
-            r["wait_seconds"] for r in rows if r["status"] == "open" and r["wait_seconds"]
+            r["wait_seconds"]
+            for r in rows
+            if r["status"] == "open" and r["wait_seconds"] is not None
         ]
         return {
             "total": len(rows),
@@ -1224,123 +1277,6 @@ class AnalyticsStore:
         for status, n in counts.items():
             TICKETS_BY_STATUS.labels(status=status).set(n)
         ACTIVE_TICKETS.set(counts["open"] + counts["claimed"])
-
-    # --------------------------------------------------------------- demo seed
-    def seed_demo(self, hours: int = 24, turns_per_hour: int = 40, seed: int = 7) -> int:
-        """Generate synthetic, clearly-fake traffic so the UI can be validated without an LLM.
-        Only exposed in dev/test (see routers/analytics.py)."""
-        rnd = random.Random(seed)
-        now = time.time()
-        channels = ["rest", "ws", "whatsapp", "slack", "gmail", "voice"]
-        tenants = ["default", "acme_corp", "globex"]
-        tool_names = ["web_search", "web_browse", "github_issue", "gmail_send", "slack_post"]
-        reasons = ["human_requested", "cancel", "complex", "complex", "human_requested"]
-        n = 0
-        for h in range(hours, 0, -1):
-            for _ in range(turns_per_hour + rnd.randint(-10, 10)):
-                ts = now - h * 3600 + rnd.random() * 3600
-                ch = rnd.choice(channels)
-                ten = rnd.choice(tenants)
-                sid = f"demo-{rnd.randint(1, 400)}"
-                roll = rnd.random()
-                handoff_bias = 0.18 if ch == "whatsapp" else 0.08
-                outcome = (
-                    "rate_limited"
-                    if roll < 0.02
-                    else "error"
-                    if roll < 0.05
-                    else "handoff"
-                    if roll < 0.05 + handoff_bias
-                    else "autonomous_resolved"
-                )
-                tools_used: list[str] = []
-                if outcome == "autonomous_resolved" and rnd.random() < 0.55:
-                    tools_used = rnd.choices(
-                        tool_names, weights=[5, 3, 1, 1, 1], k=rnd.randint(1, 3)
-                    )
-                for t in tools_used:
-                    ok = rnd.random() > (0.25 if t == "web_browse" else 0.04)
-                    self.record_tool(
-                        tool=t,
-                        duration=rnd.lognormvariate(-0.5 if t != "web_browse" else 0.6, 0.6),
-                        success=ok,
-                        error_type=None if ok else rnd.choice(["timeout", "http_error"]),
-                        channel=ch,
-                        tenant_id=ten,
-                        session_id=sid,
-                        ts=ts,
-                    )
-                llm_calls = 0 if outcome in ("handoff", "rate_limited") else 1 + len(tools_used)
-                for _ in range(llm_calls):
-                    self.record_llm(
-                        model="demo/llama-3.1-70b",
-                        duration=rnd.lognormvariate(0.2, 0.4),
-                        success=rnd.random() > 0.01,
-                        prompt_tokens=rnd.randint(400, 3000),
-                        completion_tokens=rnd.randint(40, 400),
-                        channel=ch,
-                        tenant_id=ten,
-                        ts=ts,
-                    )
-                reason = rnd.choice(reasons) if outcome == "handoff" else None
-                if reason:
-                    self.record_handoff(
-                        channel=ch, tenant_id=ten, reason=reason, session_id=sid, ts=ts
-                    )
-                    wait = rnd.lognormvariate(5, 1)
-                    self.record_ticket(
-                        kind="claimed",
-                        ticket_id=sid,
-                        channel=ch,
-                        tenant_id=ten,
-                        reason=reason,
-                        seconds=wait,
-                        ts=ts + wait,
-                    )
-                if outcome == "rate_limited":
-                    self._health.append(HealthEvent(ts, "rate_limited", "ip", ch, ten))
-                self.record_memory("redis", rnd.lognormvariate(-6, 0.5), rnd.random() > 0.3, ts=ts)
-                if rnd.random() < 0.5:
-                    self.record_memory(
-                        "pgvector", rnd.lognormvariate(-3, 0.5), rnd.random() > 0.5, ts=ts
-                    )
-                for node, mu in (("classify_intent", -7), ("prepare", -6), ("save_turn", -5)):
-                    self.record_node(node, rnd.lognormvariate(mu, 0.5), ts=ts)
-                dur = (
-                    0.0
-                    if outcome == "rate_limited"
-                    else (rnd.lognormvariate(0.4, 0.5) + sum(0.6 for _ in tools_used))
-                )
-                self.record_turn(
-                    session_id=sid,
-                    channel=ch,
-                    tenant_id=ten,
-                    outcome=outcome,
-                    duration=dur,
-                    tools=tools_used,
-                    cycles=len(tools_used),
-                    llm_calls=llm_calls,
-                    handoff_reason=reason,
-                    ts=ts,
-                )
-                n += 1
-        # keep deques time-ordered (seed writes interleaved timestamps)
-        with self._lock:
-            for name in (
-                "_turns",
-                "_tools",
-                "_llm",
-                "_handoffs",
-                "_tickets",
-                "_health",
-                "_samples",
-            ):
-                dq = getattr(self, name)
-                ordered = sorted(dq, key=lambda e: e.ts)
-                dq.clear()
-                dq.extend(ordered)
-            self._cache.clear()
-        return n
 
 
 ANALYTICS = AnalyticsStore()

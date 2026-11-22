@@ -10,6 +10,9 @@ export const POLLING_INTERVALS = {
   HEALTH_MS: 15000,
 }
 
+/** External Grafana instance (override with VITE_GRAFANA_URL at build time). */
+export const GRAFANA_URL: string = import.meta.env.VITE_GRAFANA_URL || 'http://localhost:3000'
+
 export const TICKET_STATUS_COLORS = {
   open: {
     bg: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
