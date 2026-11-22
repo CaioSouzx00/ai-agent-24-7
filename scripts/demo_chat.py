@@ -53,7 +53,9 @@ def main() -> None:
 
                 data = resp.json()
                 if data.get("paused"):
-                    print("⏸️ [Bot Pausado]: Um atendente humano está com o controle deste chamado.")
+                    print(
+                        "⏸️ [Bot Pausado]: Um atendente humano está com o controle deste chamado."
+                    )
                 elif data.get("handoff"):
                     print(f"🚨 [Transbordo Acionado]: {data.get('response')}")
                     print("➡️ Abra http://localhost:8080/handoff/ui para responder como humano!")

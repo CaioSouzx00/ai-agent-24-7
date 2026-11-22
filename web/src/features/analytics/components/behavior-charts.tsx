@@ -12,12 +12,7 @@ import {
   fmtPct,
   gridProps,
 } from '../lib/format'
-import { ChartTooltipBox } from './chart-primitives'
-
-interface TooltipLikeProps {
-  active?: boolean
-  payload?: ReadonlyArray<{ payload?: unknown }>
-}
+import { ChartTooltipBox, hoveredRow, type TooltipLikeProps } from './chart-primitives'
 
 // ---------------------------------------------------------------------------
 // Outcomes donut — click a slice to filter the conversations table
@@ -36,8 +31,8 @@ export function OutcomesChart({
     .map(([k, v]) => ({ key: k, value: v }))
   const total = rows.reduce((s, r) => s + r.value, 0)
 
-  const tip = ({ active: on, payload }: TooltipLikeProps) => {
-    const r = on ? (payload?.[0]?.payload as { key: string; value: number } | undefined) : undefined
+  const tip = (props: TooltipLikeProps) => {
+    const r = hoveredRow<{ key: string; value: number }>(props)
     if (!r) return null
     return (
       <ChartTooltipBox
@@ -117,8 +112,8 @@ export function OutcomesChart({
 // ---------------------------------------------------------------------------
 export function TopToolsChart({ tools, onSelect }: { tools: ToolStats[]; onSelect: (tool: string) => void }) {
   const rows = tools.slice(0, 10)
-  const tip = ({ active, payload }: TooltipLikeProps) => {
-    const t = active ? (payload?.[0]?.payload as ToolStats | undefined) : undefined
+  const tip = (props: TooltipLikeProps) => {
+    const t = hoveredRow<ToolStats>(props)
     if (!t) return null
     return (
       <ChartTooltipBox
@@ -177,8 +172,8 @@ export function HandoffReasonsChart({
   const rows = Object.entries(byReason)
     .map(([reason, count]) => ({ reason, count, label: REASON_LABELS[reason] ?? reason }))
     .sort((a, b) => b.count - a.count)
-  const tip = ({ active: on, payload }: TooltipLikeProps) => {
-    const r = on ? (payload?.[0]?.payload as (typeof rows)[number] | undefined) : undefined
+  const tip = (props: TooltipLikeProps) => {
+    const r = hoveredRow<(typeof rows)[number]>(props)
     if (!r) return null
     return (
       <ChartTooltipBox
@@ -224,8 +219,8 @@ export function HandoffReasonsChart({
 // ---------------------------------------------------------------------------
 export function ToolsPerConversationChart({ dist }: { dist: { bucket: string; count: number }[] }) {
   const total = dist.reduce((s, d) => s + d.count, 0)
-  const tip = ({ active, payload }: TooltipLikeProps) => {
-    const d = active ? (payload?.[0]?.payload as { bucket: string; count: number } | undefined) : undefined
+  const tip = (props: TooltipLikeProps) => {
+    const d = hoveredRow<{ bucket: string; count: number }>(props)
     if (!d) return null
     return (
       <ChartTooltipBox

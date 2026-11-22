@@ -1,5 +1,17 @@
 import { C } from '../lib/format'
 
+/** Minimal structural type of the props recharts passes to a custom `<Tooltip content>`. */
+export interface TooltipLikeProps {
+  active?: boolean
+  label?: unknown
+  payload?: ReadonlyArray<{ dataKey?: unknown; value?: unknown; color?: string; payload?: unknown }>
+}
+
+/** Row payload of the hovered datum (bar/pie charts with one entry per row). */
+export function hoveredRow<T>({ active, payload }: TooltipLikeProps): T | undefined {
+  return active ? (payload?.[0]?.payload as T | undefined) : undefined
+}
+
 export interface TooltipRow {
   key: string
   label: string

@@ -1,12 +1,7 @@
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import type { AnalyticsSummary, SampleStats } from '../schemas/analytics-schemas'
 import { C, SERIES, axisProps, fmtCompact, fmtDuration, fmtPct, gridProps } from '../lib/format'
-import { ChartTooltipBox } from './chart-primitives'
-
-interface TooltipLikeProps {
-  active?: boolean
-  payload?: ReadonlyArray<{ payload?: unknown }>
-}
+import { ChartTooltipBox, hoveredRow, type TooltipLikeProps } from './chart-primitives'
 
 function Stat({ label, value, tone = C.text, sub }: { label: string; value: string; tone?: string; sub?: string }) {
   return (
@@ -114,8 +109,8 @@ export function NodeDurationChart({ nodes }: { nodes: Record<string, SampleStats
   const rows = Object.entries(nodes)
     .map(([node, s]) => ({ node, p95: s.p95 ?? 0, avg: s.avg ?? 0, count: s.count }))
     .sort((a, b) => b.p95 - a.p95)
-  const tip = ({ active, payload }: TooltipLikeProps) => {
-    const r = active ? (payload?.[0]?.payload as (typeof rows)[number] | undefined) : undefined
+  const tip = (props: TooltipLikeProps) => {
+    const r = hoveredRow<(typeof rows)[number]>(props)
     if (!r) return null
     return (
       <ChartTooltipBox

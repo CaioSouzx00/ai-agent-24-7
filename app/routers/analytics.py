@@ -103,6 +103,7 @@ class PreviousPeriod(BaseModel):
     error_rate: float | None = None
     latency_p95: float | None = None
     rate_limited: int
+    rate_limited_total: int = 0
 
 
 class ToolsBlock(BaseModel):
@@ -369,10 +370,13 @@ async def meta() -> dict[str, Any]:
 
 @router.post("/_seed", include_in_schema=False)
 async def seed(hours: int = Query(24, ge=1, le=24 * 30), per_hour: int = Query(40, ge=1, le=500)):
-    """DEV/TEST ONLY: inject synthetic traffic to validate the UI without an LLM."""
+    """DEV/TEST ONLY: inject synthetic traffic to validate the UI without an LLM.
+    Synthetic data never reaches the Prometheus counters (see app.analytics_demo)."""
     if get_settings().app_env not in ("dev", "test"):
         raise HTTPException(404)
-    return {"seeded_turns": ANALYTICS.seed_demo(hours=hours, turns_per_hour=per_hour)}
+    from app.analytics_demo import seed_demo
+
+    return {"seeded_turns": seed_demo(ANALYTICS, hours=hours, turns_per_hour=per_hour)}
 
 
 @spa.get("/analytics", include_in_schema=False)

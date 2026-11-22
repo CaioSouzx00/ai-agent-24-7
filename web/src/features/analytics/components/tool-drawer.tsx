@@ -11,15 +11,11 @@ import {
   YAxis,
 } from 'recharts'
 import { useAnalyticsToolDetail } from '../api/use-analytics'
+import type { ToolDetail } from '../schemas/analytics-schemas'
 import { useAnalyticsStore } from '../store/analytics-store'
 import { C, axisProps, errorRamp, fmtCompact, fmtDateTime, fmtDuration, fmtPct, fmtTime, gridProps } from '../lib/format'
-import { ChartTooltipBox } from './chart-primitives'
+import { ChartTooltipBox, hoveredRow, type TooltipLikeProps } from './chart-primitives'
 import { PanelEmpty, PanelSkeleton } from './panel'
-
-interface TooltipLikeProps {
-  active?: boolean
-  payload?: ReadonlyArray<{ payload?: unknown }>
-}
 
 export function ToolDrawer() {
   const tool = useAnalyticsStore((s) => s.selectedTool)
@@ -35,8 +31,8 @@ export function ToolDrawer() {
   if (!tool) return null
   const span = data ? (data.series.at(-1)?.ts ?? 0) - (data.series[0]?.ts ?? 0) : 86400
 
-  const tip = ({ active, payload }: TooltipLikeProps) => {
-    const p = active ? (payload?.[0]?.payload as { ts: number; calls: number; errors: number; p95: number | null } | undefined) : undefined
+  const tip = (props: TooltipLikeProps) => {
+    const p = hoveredRow<ToolDetail['series'][number]>(props)
     if (!p) return null
     return (
       <ChartTooltipBox
