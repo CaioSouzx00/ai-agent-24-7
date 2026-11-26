@@ -66,9 +66,7 @@ def validate_production_settings(settings: Settings) -> list[str]:
     # Insecure API keys or JWT secrets
     insecure_keys = [k for k in keys if k.lower() in insecure_dev_values]
     if insecure_keys:
-        issues.append(
-            f"CRITICAL: API_KEYS contains insecure development default: {', '.join(insecure_keys)}"
-        )
+        issues.append("CRITICAL: API_KEYS contains an insecure development default")
 
     if settings.jwt_secret and settings.jwt_secret.lower() in insecure_dev_values:
         issues.append("CRITICAL: JWT_SECRET is using an insecure development default")

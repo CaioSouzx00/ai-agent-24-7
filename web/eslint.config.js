@@ -21,12 +21,6 @@ export default [
       boundaries,
     },
     settings: {
-      'import/resolver': {
-        typescript: {
-          alwaysTryTypes: true,
-          project: './tsconfig.app.json',
-        },
-      },
       'boundaries/elements': [
         {
           type: 'app',

@@ -1240,9 +1240,7 @@ class AnalyticsStore:
                     "resolved_at": resolved_at,
                     "wait_seconds": round(wait, 1) if wait is not None and wait >= 0 else None,
                     "resolution_seconds": (
-                        round(resolution, 1)
-                        if resolution is not None and resolution >= 0
-                        else None
+                        round(resolution, 1) if resolution is not None and resolution >= 0 else None
                     ),
                     "messages": len(t.messages),
                 }
@@ -1277,6 +1275,13 @@ class AnalyticsStore:
         for status, n in counts.items():
             TICKETS_BY_STATUS.labels(status=status).set(n)
         ACTIVE_TICKETS.set(counts["open"] + counts["claimed"])
+
+    # --------------------------------------------------------------- demo seed
+    def seed_demo(self, hours: int = 24, turns_per_hour: int = 40, seed: int = 7) -> int:
+        """Generate synthetic traffic without emitting production Prometheus metrics."""
+        from app.analytics_demo import seed_demo
+
+        return seed_demo(self, hours=hours, turns_per_hour=turns_per_hour, seed=seed)
 
 
 ANALYTICS = AnalyticsStore()

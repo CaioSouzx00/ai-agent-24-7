@@ -45,6 +45,12 @@ export function mergeSeries(series: Record<string, TimeseriesResponse | undefine
   return [...rows.values()].sort((a, b) => a.ts - b.ts)
 }
 
+interface TooltipLikeProps {
+  active?: boolean
+  label?: unknown
+  payload?: ReadonlyArray<{ dataKey?: unknown; value?: unknown; color?: string }>
+}
+
 interface Props {
   data: Row[]
   keys: string[]

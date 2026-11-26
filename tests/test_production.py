@@ -17,6 +17,16 @@ def test_get_secret_from_file_env(tmp_path, monkeypatch):
     assert get_secret("MY_KEY") == "file-secret-value-456"
 
 
+def test_settings_load_secret_file_env(tmp_path, monkeypatch):
+    secret_file = tmp_path / "nim-api-key.txt"
+    secret_file.write_text("file-backed-nim-key", encoding="utf-8")
+    monkeypatch.setenv("NIM_API_KEY_FILE", str(secret_file))
+    monkeypatch.delenv("NIM_API_KEY", raising=False)
+
+    settings = get_settings.__wrapped__()
+    assert settings.nim_api_key == "file-backed-nim-key"
+
+
 def test_get_secret_default():
     assert get_secret("NON_EXISTENT_VAR", default="my-default") == "my-default"
 
@@ -36,6 +46,16 @@ def test_validate_production_insecure_defaults(monkeypatch):
     assert any(
         "WARNING: DATABASE_URL is using the default development credentials" in i for i in issues
     )
+
+
+def test_production_validation_does_not_echo_insecure_api_key(monkeypatch):
+    settings = get_settings.__wrapped__()
+    monkeypatch.setattr(settings, "app_env", "prod")
+    monkeypatch.setattr(settings, "api_keys", "secret")
+
+    issues = validate_production_settings(settings)
+    assert any("insecure development default" in issue for issue in issues)
+    assert all("secret" not in issue for issue in issues)
 
 
 def test_validate_production_clean(monkeypatch):

@@ -121,7 +121,7 @@ class LongTermMemory:
             )
         else:
             await self._pool.execute(
-                "INSERT INTO memories (user_id, content, embedding) " "VALUES ($1, $2, $3::vector)",
+                "INSERT INTO memories (user_id, content, embedding) VALUES ($1, $2, $3::vector)",
                 user_id,
                 content,
                 _vec(emb),
