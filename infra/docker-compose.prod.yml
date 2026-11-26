@@ -34,7 +34,7 @@ services:
     networks:
       - agent-internal
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U agent"]
+      test: ["CMD-SHELL", "pg_isready -U \"$$(cat /run/secrets/db_user)\" -d agent_prod"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -56,10 +56,12 @@ services:
       REDIS_URL: redis://redis:6379/0
       DATABASE_URL_FILE: /run/secrets/db_url
       NIM_API_KEY_FILE: /run/secrets/nim_api_key
+      API_KEYS_FILE: /run/secrets/api_keys
       PUBLIC_URL: https://agent.example.com
     secrets:
       - db_url
       - nim_api_key
+      - api_keys
     depends_on:
       redis:
         condition: service_healthy
@@ -90,7 +92,7 @@ services:
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
     ports:
-      - "9090:9090"
+      - "127.0.0.1:9090:9090"
     depends_on:
       - app
     networks:
@@ -100,13 +102,13 @@ services:
     image: grafana/grafana:10.4.0
     restart: unless-stopped
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:?Set GRAFANA_ADMIN_PASSWORD for the production monitoring stack}
       - GF_USERS_ALLOW_SIGN_UP=false
     volumes:
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
       - ./grafana/dashboards:/etc/grafana/dashboards:ro
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     depends_on:
       - prometheus
     networks:
@@ -129,3 +131,5 @@ secrets:
     file: ../secrets/db_url.txt
   nim_api_key:
     file: ../secrets/nim_api_key.txt
+  api_keys:
+    file: ../secrets/api_keys.txt

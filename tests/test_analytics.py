@@ -141,6 +141,7 @@ async def test_graph_error_is_counted():
 
 def test_timeseries_grouping_and_validation():
     store = AnalyticsStore()
+    store.seed_demo(hours=3, turns_per_hour=20)
     seed_demo(store, hours=3, turns_per_hour=20)
     ts = store.timeseries("requests", "6h", "1h", group_by="channel")
     assert ts["points"] and all("labels" in p for p in ts["points"])
@@ -184,6 +185,7 @@ async def test_ticket_wait_for_open_and_unclaimed_resolved():
 
 
 async def test_analytics_endpoints():
+    ANALYTICS.seed_demo(hours=2, turns_per_hour=15)
     seed_demo(ANALYTICS, hours=2, turns_per_hour=15)
     async with httpx.AsyncClient(
         transport=httpx.ASGITransport(app=app), base_url="http://test"

@@ -29,7 +29,7 @@ dependencies = [
 tools = ["playwright>=1.43", "google-api-python-client>=2.120", "google-auth-oauthlib>=1.2", "slack-sdk>=3.27", "PyGithub>=2.3"]
 workflows = ["temporalio>=1.5"]
 observability = ["sentry-sdk[fastapi]>=2.0"]
-dev = ["pytest>=8", "pytest-asyncio>=0.23", "black>=24", "ruff>=0.4", "isort>=5.13", "pre-commit>=3.7"]
+dev = ["pytest>=8", "pytest-asyncio>=0.23", "pytest-cov>=5", "black>=24", "ruff>=0.4", "isort>=5.13", "pre-commit>=3.7"]
 
 [tool.setuptools.packages.find]
 include = ["app*"]

@@ -374,9 +374,7 @@ async def seed(hours: int = Query(24, ge=1, le=24 * 30), per_hour: int = Query(4
     Synthetic data never reaches the Prometheus counters (see app.analytics_demo)."""
     if get_settings().app_env not in ("dev", "test"):
         raise HTTPException(404)
-    from app.analytics_demo import seed_demo
-
-    return {"seeded_turns": seed_demo(ANALYTICS, hours=hours, turns_per_hour=per_hour)}
+    return {"seeded_turns": ANALYTICS.seed_demo(hours=hours, turns_per_hour=per_hour)}
 
 
 @spa.get("/analytics", include_in_schema=False)

@@ -2,11 +2,42 @@
 
 from functools import lru_cache
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from app.secrets import get_secret
+
+_SECRET_SETTINGS = (
+    "nim_api_key",
+    "redis_url",
+    "database_url",
+    "slack_bot_token",
+    "slack_signing_secret",
+    "slack_handoff_webhook",
+    "github_token",
+    "whatsapp_verify_token",
+    "whatsapp_app_secret",
+    "api_keys",
+    "whatsapp_token",
+    "sentry_dsn",
+    "jwt_secret",
+    "google_access_token",
+    "gmail_pubsub_verification_token",
+)
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+    @model_validator(mode="before")
+    @classmethod
+    def _resolve_secret_files(cls, values):
+        """Support Docker/Kubernetes mounted secrets and conventional ``*_FILE`` variables."""
+        if not isinstance(values, dict):
+            return values
+        for name in _SECRET_SETTINGS:
+            values[name] = get_secret(name, str(values.get(name, "")))
+        return values
 
     app_env: str = "dev"
     llm_provider: str = "nim"
